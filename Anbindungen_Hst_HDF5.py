@@ -79,6 +79,7 @@ for attribute in attributes:
 Ergebnis_array = [] ##Wird später in HDF5-Tabelle gefüllt
 
 for i,e in enumerate(Modus):
+    if e == "Bus":continue
     ##Die Idee ist, erst zu allen zu Routen und danach nur die Bahnhalte auszuwählen. Da so doppelte gefunden werden,
     ##müssen diese am Ende wieder gelöscht werden. Ziel: Konflikte mit Halten vermeiden die Bus- und Bahnhalte sind.
     arcpy.AddMessage("Beginne mit der Berechnung für die "+e+"halte.")
@@ -99,7 +100,7 @@ for i,e in enumerate(Modus):
     #--Erstelle ClosestFacility-Layer--#
     CFLayer = arcpy.MakeClosestFacilityLayer_na(Network,"ClosestBUSStations",Kosten,"",MaxValue,Anzahl_Modus,Kostenattribute)
 
-    arcpy.AddLocations_na(CFLayer,"Facilities","lyr","Name "+Ziel_ID+" 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Radschnellwege", "NONE"],["Ampeln", "NONE"]],"","","","","EXCLUDE") ##Das sind die Startpunkte; 0 ist der Platzhalter für ein Leerfeld!
+    arcpy.AddLocations_na(CFLayer,"Facilities","lyr","Name "+Ziel_ID+" 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Radschnellwege", "NONE"],["Ampeln", "NONE"],["Knoten", "NONE"],["MRH_Rand", "SHAPE"]],"","","","","EXCLUDE") ##Das sind die Startpunkte; 0 ist der Platzhalter für ein Leerfeld!
     arcpy.AddMessage("Ziele wurden angebunden!")
     if Barrieren == "true":
         Barrieren = "C:\Geodaten\Material.gdb\Linien\Barrieren_Faehren"
@@ -107,12 +108,18 @@ for i,e in enumerate(Modus):
 
     #--Beginne mit der Schleifer über die einzelnen Zeilen--#
     for Zeilen in range(0,Reihen,5000): ##Beginne bei 0, bis Reihen in 5.000er Schritten.
+        if Zeilen >= 4485000: continue
         if Reihen>5000: ##Damit keine irreführende Ausgabe auftritt.
             arcpy.AddMessage("Beginne mit der Anbindung und Berechnung von den Zeilen "+str(Zeilen)+" bis "+str(Zeilen+5000)+".")
         else:
             arcpy.AddMessage("Beginne mit der Anbindung und Berechnung von "+str(Reihen)+" Zeilen.")
+
         arcpy.MakeFeatureLayer_management(Start, "startlyr",OID+" >= "+str(Zeilen)+" and "+OID+" < "+str(Zeilen+5000))
-        arcpy.AddLocations_na(CFLayer,"Incidents","startlyr","Name "+Start_ID+" 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Radschnellwege", "NONE"],["Ampeln", "NONE"]],"","CLEAR","","","EXCLUDE") ##EXCLUDE: nur an Netzwerkelemente, die mit Gesamtnetz verbunden sind!
+        try:
+            field_mappings = arcpy.na.NAClassFieldMappings(CFLayer.getOutput(0),"Incidents",True,arcpy.ListFields("ODMATRIX\Origins"))
+            arcpy.AddLocations_na(CFLayer,"Incidents","startlyr",field_mappings,"","","","","CLEAR")
+            arcpy.AddMessage("yes!!!!")
+        except: arcpy.AddLocations_na(CFLayer,"Incidents","startlyr","Name "+Start_ID+" 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Radschnellwege", "NONE"],["Ampeln", "NONE"],["Knoten", "NONE"],["MRH_Rand", "SHAPE"]],"","CLEAR","","","EXCLUDE") ##EXCLUDE: nur an Netzwerkelemente, die mit Gesamtnetz verbunden sind!
         ##arcpy.AddLocations_na(CFLayer,"Incidents","startlyr","Name "+Start_ID+" 0; Attr_Minutes # #","","","","","CLEAR","","","EXCLUDE")
         try:
             arcpy.Solve_na(CFLayer,"SKIP") #SKIP:Not Located wird übersprungen.
@@ -184,6 +191,8 @@ if Potenzial != "":
 #--Erhebnistabelle erstellen--#
 Spalten = np.dtype(Spalten) ##Wandle Spalten-Tuple in dtype um
 data = np.array(Ergebnis_array,Spalten)
+if Ergebnisse in group5.keys():
+        del group5[Ergebnisse]
 dset5 = group5.create_dataset(Ergebnisse, data=data, dtype=Spalten)
 
 #--HDF5-Text zu Tabellenbeschreibung--#
@@ -193,6 +202,3 @@ dset5.attrs.create("Parameter",str(text))
 file5.flush()
 file5.close()
 hh
-
-
-
