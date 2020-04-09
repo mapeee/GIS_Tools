@@ -2,7 +2,7 @@
 """
 Created on Thu Apr  9 10:02:46 2020
 
-@author: marcu
+@author: marcus
 """
 
 import xlwt
@@ -17,12 +17,13 @@ f = path.read_text().split('\n')
 
 
 ##Parameter
-df_FAN = pd.read_excel(r'C:'+f[0], sheet_name=f[1])
+input_table = pd.read_excel(r'C:'+f[0], sheet_name=f[1])
 X_f = "GK-X"
 Y_f = "GK-Y"
+
 in_proj = "epsg:31467"
 out_proj = "epsg:25832"
-transformer = Transformer.from_crs(in_proj, out_proj)
+transformer = Transformer.from_crs(in_proj, out_proj, always_xy=True)
 
 
 ##write headings to new excel_file
@@ -36,7 +37,7 @@ ws.write(0, 2, "X_UTM")
 ws.write(0, 3, "Y_UTM")
 
 line = 1
-for index, row in df_FAN.iterrows():
+for index, row in input_table.iterrows():
     X = str(row[X_f])
     X = X.replace(".","")
     X = X+"00000"
@@ -45,7 +46,8 @@ for index, row in df_FAN.iterrows():
     Y = Y.replace(".","")
     Y = Y+"00000"
     Y = int(Y[:7])
-    x_out, y_out = transformer.transform(Y, X)
+    x_out, y_out = transformer.transform(X, Y)
+    print (x_out, y_out)
     if row["Master"] >0: ws.write(line, 0, row["Master"])
     else: ws.write(line, 0, row["HST-Nr"])
     ws.write(line, 1, row["Name + Ort"])
