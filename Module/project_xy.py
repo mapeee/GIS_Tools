@@ -2,7 +2,7 @@
 """
 Created on Tue Apr 14 16:25:31 2020
 
-@author: marcu
+@author: marcus
 """
 
 from pyproj import Transformer
