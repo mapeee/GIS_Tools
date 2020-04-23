@@ -10,15 +10,7 @@ import pandas as pd
 
 
 def project_xy(in_x, in_y, transformer):
-    X = str(in_x)
-    X = X.replace(".","")
-    X = X+"00000"
-    X = int(X[:7])
-    Y = str(in_y)
-    Y = Y.replace(".","")
-    Y = Y+"00000"
-    Y = int(Y[:7])
-    x_out, y_out = transformer.transform(X, Y)
+    x_out, y_out = transformer.transform(in_x, in_y)
     return x_out, y_out
 
 
