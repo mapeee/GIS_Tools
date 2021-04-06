@@ -40,20 +40,24 @@ excelfile = f[0]
 wbk = openpyxl.load_workbook(excelfile)
 wks = wbk.worksheets[0]
 
-
-def bing(query,key):
-    result_bing = geocoder.bing(query, key = key)
-    return result_bing.lat, result_bing.lng, 'bing', result_bing.postal
+def bing(query):
+    result_bing = geocoder.bing(query, key = bing_key)
+    return result_bing.lat, result_bing.lng, 'bing', result_bing.postal, result_bing.raw["confidence"]
     
-def geocage(query, geocoder):
-    result_osm = geocoder.geocode(query)
-    lat = result_osm[0]["geometry"]["lat"]
-    lng = result_osm[0]["geometry"]["lng"]
-    return lat, lng, 'geocage'
+def geocage(query):
+    result_osm = geocoder_osm.geocode(query)
+    for i in result_osm:
+        try:
+            no = i["components"]["house_number"]
+            lat = i["geometry"]["lat"]
+            lng = i["geometry"]["lng"]
+            break
+        except: lat, lng, no = "error", "error", "error"
+    return lat, lng, 'opencage', no
 
-def here(query, key):
+def here(query):
     URL = "https://geocode.search.hereapi.com/v1/geocode"
-    PARAMS = {'apikey':key,'q':query}
+    PARAMS = {'apikey':here_key,'q':query}
     r = requests.get(url = URL, params = PARAMS)
     data = r.json()
     lat = data['items'][0]['position']['lat']
@@ -72,31 +76,29 @@ def exl_writer(results, row):
     wks.cell(row, 5).value = transform(results)[1]
     wks.cell(row, 6).value = results[2]
     
-
-
+    
 #--geocoding--#
 for row in range(2,wks.max_row+1):##to prevent 0 and no header
 
     query = wks.cell(row,Street).value+", "+str(wks.cell(row,ZIP).value)+" "+wks.cell(row,City).value      
-    bing_result = bing(query, bing_key)
+    #bing
+    result = bing(query)
+    #geocage
+    if result[3] == None or result[3] not in query or result[4] != "High": result = geocage(query)
+    #here
+    if result[3] == 'error': result = here(query)  
     
-    if bing_result[3] == None or bing_result[3] not in query:
-        geocage_result = geocage(query, geocoder_osm)
-        exl_writer(geocage_result,row)       
-    else: exl_writer(bing_result,row)
-                                     
+    exl_writer(result,row)       
     time.sleep(0.1) ##pause 1.5 seconds
-    print(row)
+    if row in list(range(0,wks.max_row+1,10)): print(row)
 
 #--header--#
 wks.cell(1, 4).value = 'X'
 wks.cell(1, 5).value = 'Y'
 wks.cell(1, 6).value = 'geocoder'
 
-
 #--end--#
 wbk.save(excelfile)
 wbk.close()
-
 seconds = int(time.time() - start_time)
 print("--finished after ",seconds,"seconds--")
