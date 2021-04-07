@@ -42,7 +42,7 @@ wks = wbk.worksheets[0]
 
 def bing(query):
     result_bing = geocoder.bing(query, key = bing_key)
-    return result_bing.lat, result_bing.lng, 'bing', result_bing.postal, result_bing.raw["confidence"]
+    return result_bing.lng, result_bing.lat, 'bing', result_bing.postal, result_bing.raw["confidence"]
     
 def geocage(query):
     result_osm = geocoder_osm.geocode(query)
@@ -53,7 +53,7 @@ def geocage(query):
             lng = i["geometry"]["lng"]
             break
         except: lat, lng, no = "error", "error", "error"
-    return lat, lng, 'opencage', no
+    return lng, lat, 'opencage', no
 
 def here(query):
     URL = "https://geocode.search.hereapi.com/v1/geocode"
@@ -62,13 +62,13 @@ def here(query):
     data = r.json()
     lat = data['items'][0]['position']['lat']
     lng = data['items'][0]['position']['lng']
-    return lat, lng, 'here'
+    return lng, lat, 'here'
 
 def transform(XY):
     epsg_in = "epsg:4326"
     epsg_out = "epsg:25832"
     transformer = Transformer.from_crs(epsg_in, epsg_out, always_xy=True)
-    x_out, y_out = transformer.transform(XY[1], XY[0])
+    x_out, y_out = transformer.transform(XY[0], XY[1])
     return x_out, y_out
 
 def exl_writer(results, row):    
