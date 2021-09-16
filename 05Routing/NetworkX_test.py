@@ -40,7 +40,7 @@ def graphs(links,epsg):
     G = nx.Graph(crs="EPSG:"+str(epsg))
     return graph, G
 
-def addNode(xy_node, nodes, links, graph):
+def addNode(xy_node, nodes, links, graph, v_add):
     dist,i = spatial.KDTree(nodes).query(xy_node)
     near = nodes[i]    
     k = links[links.apply(lambda row: near[0] in row.geometry.coords.xy[0] 
@@ -60,7 +60,7 @@ def addNode(xy_node, nodes, links, graph):
         dist2 = spatial.distance.cdist([(x[-1],y[-1])], [(near[0],near[1])], 'euclidean')[0][0]
         graph.add_edge((x[-1],y[-1]),(near[0],near[1]),tAkt=(dist2/(v/float(3.6)))/60)
         
-    graph.add_edge((xy_node),(near[0],near[1]),tAkt=(dist/(5/float(3.6)))/60)
+    graph.add_edge((xy_node),(near[0],near[1]),tAkt=(dist/(v_add/float(3.6)))/60)
     
     return (xy_node,pos_xy_node)
 
@@ -105,6 +105,7 @@ def printroute(route,pos,col):
 path = open(Path.home() / 'python32' / 'python_dir.txt', mode='r').readlines()[0]
 f = Path.joinpath(Path(path),'GIS_Tools','Networkx.txt').read_text().split('\n')
 Network = f[0]
+Locations = gpd.read_file(f[1])
 epsg = 25832
 impedance = "tAkt"
 method = "accurate"
@@ -118,8 +119,12 @@ graph, G = graphs(links,epsg)
 ##########################
 # Routes
 ##########################
-orig = (645855.629,5956835.576)
-desti = (638129.780,5954136.820)
+# orig = (645855.629,5956835.576)
+# desti = (638129.780,5954136.820)
+
+orig = (Locations.iloc[0].geometry.coords.xy[0][0],Locations.iloc[0].geometry.coords.xy[1][0])
+desti = (Locations.iloc[33].geometry.coords.xy[0][0],Locations.iloc[33].geometry.coords.xy[1][0])
+
 
 if method == "simple":
     route, pos = routesimple(graph,G,orig,desti,impe=impedance)
@@ -127,8 +132,8 @@ if method == "simple":
     printroute(route,pos,col="blue")
 
 if method == "accurate":
-    orig = addNode(orig, nodes, links, graph)
-    desti = addNode(desti, nodes, links, graph)
+    orig = addNode(orig, nodes, links, graph, v_add=50)
+    desti = addNode(desti, nodes, links, graph, v_add=50)
     pos = buildnetwork(graph,G,draw=0,impe=impedance)
     
     route = routeaccurate(G,orig,desti,impe=impedance)
