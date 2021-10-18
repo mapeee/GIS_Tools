@@ -11,7 +11,7 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-# to try : Graph-tool
+# networkx to igraph
 from functools import reduce
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -83,7 +83,6 @@ def routeaccurate(G,orig,desti,impe):
 def routesimple(graph,G,orig,desti,impe):
     pos = buildnetwork(graph,G,draw=0,impe=impedance)
     nodes = np.array(graph.nodes())
-    nodes[spatial.KDTree(nodes).query(orig)[1]]
     distance_s,index_s = spatial.KDTree(nodes).query(orig)
     distance_t,index_t = spatial.KDTree(nodes).query(desti)
 
@@ -122,13 +121,36 @@ graph, G = graphs(links,epsg)
 # orig = (645855.629,5956835.576)
 # desti = (638129.780,5954136.820)
 
+
+####################
+buildnetwork(graph,G,draw=0,impe=impedance)
+# length, path = nx.multi_source_dijkstra(G, {14000},weight= impedance)
+# length = nx.multi_source_dijkstra_path_length(G, {12000, 14000},weight= impedance)
+start_time = time.time()
+for p in range(12000,12100):length, path = nx.multi_source_dijkstra(G, {p},weight= impedance)
+print(round((time.time() - start_time),1),"seconds--")
+
+import igraph as ig
+g = ig.Graph.from_networkx(G)
+# path = g.get_shortest_paths(1,1000,mode="out",weights=impedance,output="epath")
+# sum(g.es[path[0]][impedance])
+start_time = time.time()
+for p in range(12000,12100):path = g.get_all_shortest_paths(p, to=None, weights=impedance, mode='out')
+print(round((time.time() - start_time),1),"seconds--")
+
+route = nx.shortest_path(G=G, source=1, target=1000, weight=impedance)
+print("impedance: "+str(round(path_weight(G=G, path=route, weight=impedance),1)))
+#####################
+
+
+
 orig = (Locations.iloc[0].geometry.coords.xy[0][0],Locations.iloc[0].geometry.coords.xy[1][0])
 desti = (Locations.iloc[33].geometry.coords.xy[0][0],Locations.iloc[33].geometry.coords.xy[1][0])
 
 
 if method == "simple":
     route, pos = routesimple(graph,G,orig,desti,impe=impedance)
-    print("impedance: "+str(round(path_weight(G=G, path=route, weight="tAkt"),1)))
+    print("impedance: "+str(round(path_weight(G=G, path=route, weight=impedance),1)))
     printroute(route,pos,col="blue")
 
 if method == "accurate":
@@ -137,7 +159,7 @@ if method == "accurate":
     pos = buildnetwork(graph,G,draw=0,impe=impedance)
     
     route = routeaccurate(G,orig,desti,impe=impedance)
-    print("impedance: "+str(round(path_weight(G=G, path=route, weight="tAkt"),1)))
+    print("impedance: "+str(round(path_weight(G=G, path=route, weight=impedance),1)))
     printroute(route,pos,col="red")
 
 ##########################
