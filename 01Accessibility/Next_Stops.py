@@ -53,31 +53,6 @@ def costattr():
     for attribute in attributes:
         if attribute.usageType == "Cost":cost_attr.append(attribute.name)
 
-def ODLayer(mod,FC,FC_ID,fieldmap):
-    arcpy.AddMessage("> starting with: "+mod[0])
-    costattr()
-    if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" = 0")
-    else: arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" > 0")
-    if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
-
-    arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
-    if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
-    arcpy.AddMessage("> "+mod[0]+"stops added \n")
-    if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
-
-def ODRouting(FC,FC_ID,OID,row,fieldmap):
-    arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
-    if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","CLEAR","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
-    try: arcpy.Solve_na("ODLayer","SKIP") ##SKIP:Not Located is skipped
-    except:
-        arcpy.AddMessage("> error "+str(row)+" bis "+str(row+5000))
-        arcpy.Delete_management("places")
-        raise
-
 def ExportRoutes(mod):
     routes = arcpy.SearchCursor("ODLayer\Lines")
     route = routes.next()
@@ -127,6 +102,31 @@ def HDF5(Datenbank,Potential,results):
     Ziel+", costs: "+Costs+", bus, train: "+Anzahl+", maximal costs: "+str(MaxCosts)
     dset5.attrs.create("Parameters",str(text))
     return file5
+
+def ODLayer(mod,FC,FC_ID,fieldmap):
+    arcpy.AddMessage("> starting with: "+mod[0])
+    costattr()
+    if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" = 0")
+    else: arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" > 0")
+    if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
+
+    arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
+    if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
+    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","","","","EXCLUDE")
+    else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
+    arcpy.AddMessage("> "+mod[0]+"stops added \n")
+    if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
+
+def ODRouting(FC,FC_ID,OID,row,fieldmap):
+    arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
+    if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
+    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","CLEAR","","","EXCLUDE")
+    else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
+    try: arcpy.Solve_na("ODLayer","SKIP") ##SKIP:Not Located is skipped
+    except:
+        arcpy.AddMessage("> error "+str(row)+" bis "+str(row+5000))
+        arcpy.Delete_management("places")
+        raise
 
 ##############
 #--starting--#
