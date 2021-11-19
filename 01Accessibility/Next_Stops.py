@@ -54,17 +54,17 @@ def costattr():
         if attribute.usageType == "Cost":cost_attr.append(attribute.name)
 
 def ODLayer(mod,FC,FC_ID,fieldmap):
-    arcpy.AddMessage(">> starting with: "+mod[0])
+    arcpy.AddMessage("> starting with: "+mod[0])
     costattr()
     if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" = 0")
     else: arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" > 0")
-    if mod[1] == 0: arcpy.AddMessage(">> no stops in mode: "+mod[0])
+    if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
 
     arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
-    arcpy.AddMessage(">> "+mod[0]+"stops added \n")
+    arcpy.AddMessage("> "+mod[0]+"stops added \n")
     if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
 
 def ODRouting(FC,FC_ID,OID,row,fieldmap):
@@ -74,7 +74,7 @@ def ODRouting(FC,FC_ID,OID,row,fieldmap):
     else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
     try: arcpy.Solve_na("ODLayer","SKIP") ##SKIP:Not Located is skipped
     except:
-        arcpy.AddMessage(">> error "+str(row)+" bis "+str(row+5000))
+        arcpy.AddMessage("> error "+str(row)+" bis "+str(row+5000))
         arcpy.Delete_management("places")
         raise
 
@@ -94,7 +94,7 @@ def ExportRoutes(mod):
         route = routes.next()
     del route,routes
     arcpy.Delete_management("places")
-    arcpy.AddMessage(">> routes: "+str(len(array)))
+    arcpy.AddMessage("> routes: "+str(len(array)))
     return array
 
 def HDF5(Datenbank,Potential,results):
@@ -132,7 +132,7 @@ def HDF5(Datenbank,Potential,results):
 #--starting--#
 ##############
 Places = int(arcpy.GetCount_management(Start).getOutput(0))
-arcpy.AddMessage(">> amount of places: "+str(Places)+"\n")
+arcpy.AddMessage("> amount of places: "+str(Places)+"\n")
 Orig_fm = checkfm(Start, Start_ID)
 Desti_fm = checkfm(Ziel, Ziel_ID)
 
@@ -141,19 +141,19 @@ results = [] ##to fill into HDF5 table
 for mod in Modus:
     ODLayer(mod, Ziel, Ziel_ID, Desti_fm[1])
     for place in range(0,Places,5000):
-        arcpy.AddMessage(">> placaes from "+str(place)+" to "+str(place+5000))
+        arcpy.AddMessage("> placaes from "+str(place)+" to "+str(place+5000))
         ODRouting(Start, Start_ID, Orig_fm[0], place, Orig_fm[1])
         results = results + ExportRoutes(mod)
-        arcpy.AddMessage(">> time: "+str(int((time.clock() - start_time)/60))+" minutes \n")
+        arcpy.AddMessage("> time: "+str(int((time.clock() - start_time)/60))+" minutes \n")
     arcpy.Delete_management("stops")
     arcpy.Delete_management("ODLayer")
-    arcpy.AddMessage(">> "+mod[0]+" finished")
+    arcpy.AddMessage("> "+mod[0]+" finished")
 
 #--HDF5--#
-arcpy.AddMessage("\n>> starting with HDF5 \n")
+arcpy.AddMessage("\n> starting with HDF5 \n")
 file5 = HDF5(Datenbank,Potential,results)
 
 #end
-arcpy.AddMessage(">> finished")
+arcpy.AddMessage("> finished")
 file5.flush()
 file5.close()
