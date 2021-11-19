@@ -15,7 +15,7 @@ import time
 import h5py
 import numpy as np
 import pandas
-start_time = time.clock() ##Ziel: am Ende die Berechnungsdauer ausgeben
+start_time = time.time() ##Ziel: am Ende die Berechnungsdauer ausgeben
 arcpy.AddMessage("--Dieses Skript ermöglicht die Potenzialberechnung von ausgewählten Standorten.--")
 arcpy.AddMessage("--Beginne mit der Berechnung!--")
 
