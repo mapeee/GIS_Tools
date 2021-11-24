@@ -35,6 +35,22 @@ sumfak = sumfak.replace(",",";")
 sumfak = sumfak.split(";")
 
 
+def df_org_desti():
+    #--IDs from Origins--#
+    df_E = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("OD Cost Matrix\Origins","Name"))
+    df_E["Name"] = df_E["Name"].astype(int)
+    df_E = df_E.rename(columns={"Name": ID_E})
+
+    #--IDs and weight of places--#
+    df_S = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("OD Cost Matrix\Destinations","Name"))
+    df_S["Name"] = df_S["Name"].astype(int)
+    df_S = df_S.rename(columns={"Name": ID_S})
+    if ID_S not in Places: df_Slayer = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray(Layer_S,Places+[ID_S])) ##for contour and gravity measure
+    else: df_Slayer = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray(Layer_S,Places))
+    df_Slayer[ID_S] = df_Slayer[ID_S].astype(int)
+    df_S = pandas.merge(df_S,df_Slayer)
+    return df_E, df_S
+
 def HDF5():
     f5 = h5py.File(Datenbank,'r+') ##HDF5-File
     gr = f5[Group]
@@ -44,7 +60,7 @@ def HDF5():
     gr.create_dataset(Table_results, data=data, dtype=Spalten_ind, maxshape = (None,))
     result_t = gr[Table_results]
     f5.flush()
-    return f5, gr, result_t
+    return f5, result_t
 
 def indicators():
     global Spalten_ind
@@ -69,21 +85,13 @@ def indicators():
     Spalten_ind = np.dtype(Spalten_ind)
     return Indi
 
-def df_org_desti():
-    #--IDs from Origins--#
-    df_E = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("OD Cost Matrix\Origins","Name"))
-    df_E["Name"] = df_E["Name"].astype(int)
-    df_E = df_E.rename(columns={"Name": ID_E})
-
-    #--IDs and weight of places--#
-    df_S = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("OD Cost Matrix\Destinations","Name"))
-    df_S["Name"] = df_S["Name"].astype(int)
-    df_S = df_S.rename(columns={"Name": ID_S})
-    if ID_S not in Places: df_Slayer = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray(Layer_S,Places+[ID_S])) ##for contour and gravity measure
-    else: df_Slayer = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray(Layer_S,Places))
-    df_Slayer[ID_S] = df_Slayer[ID_S].astype(int)
-    df_S = pandas.merge(df_S,df_Slayer)
-    return df_E, df_S
+def save_to_HDF5(RESULT,results_all):
+    RESULT =[tuple(RESULT)]
+    size = len(results_all)
+    results_all.resize((size+1,))
+    results_all[size:(size+1)] = RESULT
+    file5.flush()
+    return results_all
 
 
 ###############
@@ -91,8 +99,8 @@ def df_org_desti():
 ###############
 arcpy.AddMessage("> starting")
 
-Indicators = indicators()
-file5, group5, results = HDF5()
+Indi_n = indicators()
+file5, results = HDF5()
 df_E, df_S = df_org_desti()
 
 #--Loop for rows / routes--#
@@ -114,18 +122,13 @@ for h in range(Loops):
     if ID_E == ID_S: df = df.rename(columns={ID_E+"_x": ID_E})
 
     #--calculate indicator values--#
-    for o in pandas.unique(df[ID_E]):
-        RESULT = []
-        RESULT.append(o)
-        df_Routes = df[df[ID_E]==o]
+    for origin in pandas.unique(df[ID_E]):
+        origin_RESULT = []
+        origin_RESULT.append(origin)
+        df_Routes = df[df[ID_E]==origin]
         if len(df_Routes) == 0: ##no (fitting under max costs) route from this origin
-            for e in range(Indicators):
-                RESULT.append(0)
-            RESULT =[tuple(RESULT)]
-            size = len(results)
-            results.resize((size+1,))
-            results[size:(size+1)] = RESULT
-            file5.flush()
+            for e in range(Indi_n): origin_RESULT.append(0)
+            results = save_to_HDF5(origin_RESULT, results)
             continue
 
         for i in Measures:
@@ -134,26 +137,22 @@ for h in range(Loops):
                     for n in sumfak:
                         Indi = df_Routes[df_Routes[Costs]<=int(n)]
                         Value = Indi[s].sum()
-                        RESULT.append(Value)
+                        origin_RESULT.append(Value)
 
                 if i=="Gravity":
                     for n in potfak:
                         n = float(n)
                         Value = round(sum(np.exp(df_Routes[Costs]*n) * df_Routes[s]))
-                        RESULT.append(Value)
+                        origin_RESULT.append(Value)
 
                 if i =="Distance":
                     Indi = df_Routes[df_Routes[s]>0]
                     Indi = Indi.reset_index()
                     Value = Indi.iloc[Indi[Costs].idxmin()]
-                    RESULT = RESULT + [Value["ID_y"],Value[Costs]]
+                    origin_RESULT = origin_RESULT + [Value["ID_y"],Value[Costs]]
 
         #--Data into HDF5 table--#
-        RESULT =[tuple(RESULT)]
-        size = len(results)
-        results.resize((size+1,))
-        results[size:(size+1)] = RESULT
-        file5.flush()
+        results = save_to_HDF5(origin_RESULT, results)
 
 ###########
 #--End--#
