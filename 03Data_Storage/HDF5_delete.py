@@ -11,8 +11,7 @@ import h5py
 #--Eingabe-Parameter--#
 Datenbank = arcpy.GetParameterAsText(0)
 Group5 = arcpy.GetParameterAsText(1)
-TabelleHDF5 = arcpy.GetParameterAsText(2)
-TabelleHDF5 = TabelleHDF5.split(";")
+TabelleHDF5 = arcpy.GetParameterAsText(2).split(";")
 
 #--connecting--#
 file5 = h5py.File(Datenbank,'r+') ##HDF5-File
