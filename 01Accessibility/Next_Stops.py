@@ -13,6 +13,7 @@
 #arcpy.management.SaveToLayerFile("ODLayer",r'PATH\\CF_Ergebnis',"RELATIVE")
 
 import arcpy
+from datetime import date
 import h5py
 import numpy as np
 import time
@@ -97,7 +98,7 @@ def HDF5(Datenbank,Potential,results):
     dset5 = group5.create_dataset(Result_table, data=data, dtype=Fields)
 
     #--HDF5-Attributes--#
-    text = "date: "+str(time.localtime()[0:3])+", places: "+Start+", stops: "+\
+    text = "date: "+date.today().strftime("%B %d, %Y")+", places: "+Start+", stops: "+\
     Ziel+", costs: "+Costs+", bus, train: "+Anzahl+", maximal costs: "+str(MaxCosts)
     dset5.attrs.create("Parameters",str(text))
     return file5
