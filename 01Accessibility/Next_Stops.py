@@ -32,10 +32,9 @@ Anzahl = arcpy.GetParameterAsText(8) ##amount of next stops
 Result_table = arcpy.GetParameterAsText(9)
 MaxCosts = arcpy.GetParameterAsText(10)
 BahnFeld = arcpy.GetParameterAsText(11)
-Potential = arcpy.GetParameterAsText(12)
+Potential = arcpy.GetParameterAsText(12).split(";")
 Barrieren = arcpy.GetParameterAsText(13)
 Modus = ["bus",int(Anzahl.split(",")[0])],["train",int(Anzahl.split(",")[1])]
-Potential = Potential.split(";")
 
 def checkfm(FC, FC_ID):
     OID, fm = "", ""
@@ -112,7 +111,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
 
     arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
     arcpy.AddMessage("> "+mod[0]+"stops added \n")
     if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
@@ -120,7 +119,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
 def ODRouting(FC,FC_ID,OID,row,fieldmap):
     arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["Faehre_NMIV", "NONE"],["Ampeln", "NONE"]],"","CLEAR","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","CLEAR","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
     try: arcpy.Solve_na("ODLayer","SKIP") ##SKIP:Not Located is skipped
     except:
