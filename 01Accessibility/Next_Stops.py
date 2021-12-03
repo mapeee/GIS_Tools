@@ -141,6 +141,7 @@ for mod in Modus:
     ODLayer(mod, Ziel, Ziel_ID, Desti_fm[1])
     for place in range(0,Places,5000):
         arcpy.AddMessage("> placaes from "+str(place)+" to "+str(place+5000))
+        arcpy.AddMessage("> mod: "+mod[0])
         ODRouting(Start, Start_ID, Orig_fm[0], place, Orig_fm[1])
         results = results + ExportRoutes(mod)
         arcpy.AddMessage("> time: "+str(int((time.clock() - start_time)/60))+" minutes \n")
