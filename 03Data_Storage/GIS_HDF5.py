@@ -1,67 +1,42 @@
 # -*- coding: cp1252 -*-
 #!/usr/bin/python
 #Skript, mit dem der Datenaustausch mit HDF5-Datenbanken gelingt.
-#Marcus September 2015
+#Marcus September 2015; new Version December 2021
 #für Python 2.7.5
 
 #---Vorbereitung---#
 import sys
-sys.path.append('c:\\Program Files (x86)\\ArcGIS\\Desktop10.2\\bin')
-sys.path.append('c:\\program files (x86)\\arcgis\\desktop10.2\\arcpy')
 import arcpy
 import time
 import h5py
-import numpy
+import numpy as np
 
-arcpy.AddMessage("--Dieses Skript ermöglicht Datenaustausch zwischen GIS und HDF5-Datenbanken--")
-arcpy.AddMessage("--Beginne mit der Berechnung!--")
 
-start_time = time.clock() ##Ziel: am Ende die Berechnungsdauer ausgeben
-
-#--Eingabe-Parameter--#
+#--Parameter--#
 Methode = arcpy.GetParameterAsText(0)
 FC = arcpy.GetParameterAsText(1)
 Felder = arcpy.GetParameterAsText(2)
-Felder = Felder.split(";") ##überführt den String in eine Liste mit dem Trennzeichen ";".
-Datenbank = arcpy.GetParameterAsText(3)
+Felder = Felder.split(";")
+Database = arcpy.GetParameterAsText(3)
 Tabelle_E = arcpy.GetParameterAsText(4)
-TabelleHDF5 = arcpy.GetParameterAsText(5)
-TabelleHDF5 = TabelleHDF5.split(";")
+TabelleHDF5 = arcpy.GetParameterAsText(5).split(";")
 Group = arcpy.GetParameterAsText(6)
-Pfad_GIS = arcpy.GetParameterAsText(7)
+Path_GIS = arcpy.GetParameterAsText(7)
 
-
-arcpy.AddMessage("--Berechnung für: "+Methode.encode('ascii')+"--")
-
-
-###########################################################################
-#--Verbindung zur HDF-5 Datenbank--#
-###########################################################################
-#--Datenzugriff--#
-file5 = h5py.File(Datenbank,'r+') ##HDF5-File
+#--calculation--#
+file5 = h5py.File(Database,'r+')
 group5 = file5[Group]
 
-###########################################################################
-#--Berechnung--#
-###########################################################################
-
-if Methode == "HDF5_GIS":
-    #--Zugriff auf HstBer der Einrichtungen--#
+if Methode == "HDF5_to_GIS":
     for i in TabelleHDF5:
-        dset = group5[i]
-        a = numpy.array(dset)
-        try:arcpy.da.NumPyArrayToTable(a,Pfad_GIS+"/"+i)
+        a = np.array(group5[i])
+        try:arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i)
         except:
-            arcpy.Delete_management(Pfad_GIS+"/"+i)
-            arcpy.da.NumPyArrayToTable(a,Pfad_GIS+"/"+i)
+            arcpy.Delete_management(Path_GIS+"/"+i)
+            arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i)
 
-else:
-    array = arcpy.da.FeatureClassToNumPyArray(FC,Felder)
-    group5.create_dataset(Tabelle_E, data=array, dtype=array.dtype)
+else: group5.create_dataset(Tabelle_E, data=arcpy.da.FeatureClassToNumPyArray(FC,Felder), dtype=array.dtype)
 
-
-
-#--Ende--#
+#--End--#
 file5.flush()
 file5.close()
-hh
