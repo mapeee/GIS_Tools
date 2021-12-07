@@ -255,7 +255,8 @@ def NMT():
     arcpy.Delete_management("A_Shape")
 
     #OD-Matrix
-    if Filter_Group_P or "Potential" in Modus: tofind = 70
+    if Filter_Group_P: tofind = 50
+    elif "Potential" in Modus: tofind = 100
     else: tofind = 2
     arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,tofind,[Costs],"","","","","NO_LINES")
     p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
@@ -286,16 +287,19 @@ def NMT():
     df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Costs]))
     df[[ID_A,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)
     df = df.rename(columns = {'Total_'+Costs:'Time'})
-    df["UH"], df["BH"], df["Costs"], df[k_A], df[k_P+"_P"] = [111,111,0,0,0]
+    df["UH"], df["BH"], df[k_A], df[k_P+"_P"] = [111,111,0,0]
+    df.drop("Name", axis=1, inplace=True)
 
     if "Potential" in Modus:
         Strukturgr.append(P_Shape_ID)
         Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("P_Shape",Strukturgr))
         df = pandas.merge(df,Strukturen,left_on=ID_P+'_P',right_on=P_Shape_ID)
+        df.drop(P_Shape_ID, axis=1, inplace=True)
         df = df.groupby([ID_P+'_P',ID_A]).first()
         df = df.reset_index()
 
     if "Distance" in Modus: df["FromStop"], df["ToStop"] = [0,0]
+    if "Potential" in Modus: df.drop([k_A,k_P+"_P"], axis=1, inplace=True)
 
     #arcpy.management.SaveToLayerFile("ODMATRIX",r'PATH\CF_Ergebnis',"RELATIVE")
 
@@ -323,8 +327,13 @@ def potential():
             dataiso = dataiso.sort_values([ID_A,toStop,"Time"])
             dataiso = dataiso.groupby([ID_A,toStop]).first().reset_index()
             dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Node_P)
-
             dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
+
+            if "NMT" in Modus:
+                proxy = proximity[np.in1d(proximity[ID_A],dataiso[ID_A+"_x"])]
+                proxy = proxy.rename(columns = {ID_A:ID_A+'_x',ID_P+'_P':ID_P+'_y'})
+                dataiso = dataiso.append(proxy, ignore_index = True)
+
             dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))].reset_index(drop=True)
             dataiso = dataiso.sort_values([ID_A+"_x",ID_P+"_y","Time"])
             dataiso = dataiso.groupby([ID_A+"_x",ID_P+"_y"]).first().reset_index()
@@ -384,7 +393,6 @@ def potential():
             file5.flush()
         del dataiso
         gc.collect()
-
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +"/".join(Modus)+\
