@@ -13,7 +13,7 @@ import pandas
 import sys
 import time
 import win32com.client.dynamic
-start_time = time.clock()
+start_time = time.time()
 pandas.options.mode.chained_assignment = None
 arcpy.CheckOutExtension("Network")
 arcpy.AddMessage("> starting\n")
@@ -136,6 +136,11 @@ def HDF5_Inputs():
     if "Isochrones" in Modus: return dsetA, dsetP, ""
     IsoChronen = group5_Iso[IsoChronen_Name]
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
+
+    if "Potential" in Modus:
+        for i in Strukturgr:
+            if i in dsetA.dtypes: dsetA.drop(i, axis=1, inplace=True)
+
     return dsetA, dsetP, IsoChronen
 
 def HDF5_Results():
@@ -303,7 +308,6 @@ def potential():
     loop_from, loop_range = 0, 100
     loops = (len(Orig)/loop_range)+1
     Iso = Iso_Slice(dsetA,dsetP,IsoChronen)
-    gc.collect()
 
     for loop in range(loops):
         arcpy.AddMessage("> loop "+str(loop+1)+"/"+str(loops))
@@ -313,18 +317,18 @@ def potential():
 
         dataiso = pandas.merge(dsetA_l,Iso,left_on=Knoten_A,right_on=fromStop)
         dataiso.loc[:,"Time"] = dataiso.loc[:,k_A]+dataiso.loc[:,"Time"]
-        dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))-4] ##-4 from maximum time to keep array small
-        dataiso = dataiso.reset_index(drop=True)
+        dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))-3].reset_index(drop=True) ##-3 from maximum time to keep array small
 
         try:
-            gb = dataiso.groupby([ID_A,toStop])
-            dataiso = dataiso.iloc[gb["Time"].idxmin()].reset_index(drop=True)
+            dataiso = dataiso.sort_values([ID_A,toStop,"Time"])
+            dataiso = dataiso.groupby([ID_A,toStop]).first().reset_index()
             dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Knoten_P)
-            gc.collect()
-            dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
 
-            gb = dataiso.groupby([ID_A+"_x",ID_P+"_y"])
-            dataiso = dataiso.iloc[gb["Time"].idxmin()]
+            dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
+            dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))].reset_index(drop=True)
+            dataiso = dataiso.sort_values([ID_A+"_x",ID_P+"_y","Time"])
+            dataiso = dataiso.groupby([ID_A+"_x",ID_P+"_y"]).first().reset_index()
+
         except:
             arcpy.AddMessage("> error in loop "+str(loop+1))
             continue
@@ -406,6 +410,6 @@ if "Distance" in Modus: distance()
 if "Potential" in Modus: potential()
 
 #end
-arcpy.AddMessage("\n> finished")
+arcpy.AddMessage("> finished after "+str(int(time.time()-start_time))+" seconds")
 file5.flush()
 file5.close()
