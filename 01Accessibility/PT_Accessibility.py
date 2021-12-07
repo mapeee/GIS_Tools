@@ -20,36 +20,36 @@ arcpy.AddMessage("> starting\n")
 
 #--ArcGIS Parameter--#
 Modus = arcpy.GetParameterAsText(0).split(";")
-Datenbank = arcpy.GetParameterAsText(1)
+Database = arcpy.GetParameterAsText(1)
 Group_A = arcpy.GetParameterAsText(2)
 Group_I = arcpy.GetParameterAsText(3)
 Group_R = arcpy.GetParameterAsText(4)
-Tabelle_R = arcpy.GetParameterAsText(5)
+Table_R = arcpy.GetParameterAsText(5)
 Time_limits = arcpy.GetParameterAsText(6).split(";")
-Tabelle_A = arcpy.GetParameterAsText(7)
+Table_A = arcpy.GetParameterAsText(7)
 k_A = arcpy.GetParameterAsText(8)
 kmh_A = int(arcpy.GetParameterAsText(9))
-Tabelle_P = arcpy.GetParameterAsText(10)
+Table_P = arcpy.GetParameterAsText(10)
 k_P = arcpy.GetParameterAsText(11)
 kmh_P = int(arcpy.GetParameterAsText(12))
 Filter_P = arcpy.GetParameterAsText(13)
 Filter_Group_P = arcpy.GetParameterAsText(14)
-Netz = arcpy.GetParameterAsText(15)
-Stunden = arcpy.GetParameterAsText(16).split(";")
-IsoChronen_Name = arcpy.GetParameterAsText(17)
+Network_PT = arcpy.GetParameterAsText(15)
+Hours = arcpy.GetParameterAsText(16).split(";")
+Isochrone_Name = arcpy.GetParameterAsText(17)
 Strukturgr = arcpy.GetParameterAsText(18).split(";")
 Measures = arcpy.GetParameterAsText(19).split(";")
 sumfak = arcpy.GetParameterAsText(20).split(";")
 potfak = arcpy.GetParameterAsText(21).split(";")
 A_Shape = arcpy.GetParameterAsText(22)
-S_Shape = arcpy.GetParameterAsText(23)
+P_Shape = arcpy.GetParameterAsText(23)
 Network = arcpy.GetParameterAsText(24)
 Radius = int(arcpy.GetParameterAsText(25))
-Kosten = arcpy.GetParameterAsText(26)
-Max_Kosten = int(arcpy.GetParameterAsText(27))
+Costs = arcpy.GetParameterAsText(26)
+Max_Costs = int(arcpy.GetParameterAsText(27))
 
-Knoten_A = "Stop_NO"
-Knoten_P = "Stop_NO"
+Node_A = "Stop_NO"
+Node_P = "Stop_NO"
 ID_A = "Start_ID"
 ID_P = "Start_ID"
 A_Shape_ID = "ID"
@@ -58,7 +58,7 @@ Barriers = "" ##Path to Shape
 fromStop = "FromStop"
 toStop = "ToStop"
 Nachlauf = 24
-Tag = ("1;1").split(";")
+Day = ("1;1").split(";")
 
 
 def checkfm(FC, FC_ID):
@@ -82,11 +82,11 @@ def distance():
         dataG.columns = [map(lambda a:a+"_P",dataG.columns)]
         Iso_p = Iso_Slice(dsetA,dsetP,IsoChronen)
 
-        IsoP = pandas.merge(dataG,Iso_p,left_on=Knoten_P+"_P",right_on=toStop)
+        IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
         gb = IsoP.groupby(fromStop)
         IsoP = IsoP.iloc[gb["Time"].idxmin()]
-        IsoA = pandas.merge(dsetA,IsoP,left_on=Knoten_A,right_on=fromStop)
+        IsoA = pandas.merge(dsetA,IsoP,left_on=Node_A,right_on=fromStop)
         IsoA["Time"] = IsoA[k_A]+IsoA["Time"]
 
         if "NMT" in Modus:
@@ -111,20 +111,20 @@ def distance():
         file5.flush()
 
 def HDF5():
-    file5 = h5py.File(Datenbank,'r+') ##HDF5-File
+    file5 = h5py.File(Database,'r+') ##HDF5-File
     group5 = file5[Group_A]
     group5_Iso = file5[Group_I]
     group5_Ergebnisse = file5[Group_R]
     return file5, group5, group5_Iso, group5_Ergebnisse
 
 def HDF5_Inputs():
-    dsetA = group5[Tabelle_A]
+    dsetA = group5[Table_A]
     if "Meter" == k_A:
         dsetA = dsetA[dsetA[k_A]<int((kmh_A/3.6*60)*int(Time_limits[1]))]
         dsetA[k_A] = dsetA[k_A]/(kmh_A/3.6*60) ##replace distance by time
     else: dsetA = dsetA[dsetA[k_A]<int(Time_limits[1])]
 
-    dsetP = group5[Tabelle_P]
+    dsetP = group5[Table_P]
     if "Meter" == k_P:
         dsetP = dsetP[dsetP[k_P]<int((kmh_P/3.6*60)*int(Time_limits[2]))]
         dsetP[k_P] = dsetP[k_P]/(kmh_P/3.6*60) ##replace distance by time
@@ -134,7 +134,7 @@ def HDF5_Inputs():
     dsetA = pandas.DataFrame(dsetA)
     dsetP = pandas.DataFrame(dsetP)
     if "Isochrones" in Modus: return dsetA, dsetP, ""
-    IsoChronen = group5_Iso[IsoChronen_Name]
+    IsoChronen = group5_Iso[Isochrone_Name]
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
 
     if "Potential" in Modus:
@@ -159,9 +159,9 @@ def HDF5_Results():
     if "Distance" in Modus: Spalten = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
     ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','int32'),('BH','int32'),('Group','i2')]
 
-    if Tabelle_R in group5_Ergebnisse.keys(): del group5_Ergebnisse[Tabelle_R]
-    group5_Ergebnisse.create_dataset(Tabelle_R, data=np.array([],Spalten), dtype=np.dtype(Spalten), maxshape = (None,))
-    Ergebnis_T = group5_Ergebnisse[Tabelle_R]
+    if Table_R in group5_Ergebnisse.keys(): del group5_Ergebnisse[Table_R]
+    group5_Ergebnisse.create_dataset(Table_R, data=np.array([],Spalten), dtype=np.dtype(Spalten), maxshape = (None,))
+    Ergebnis_T = group5_Ergebnisse[Table_R]
     Ergebnis_T.attrs.create("Parameter",str(text[0]))
     file5.flush()
 
@@ -173,19 +173,19 @@ def Isochrones():
     if "Distance" in Modus: Zeitbezug = True
 
     VISUM = win32com.client.dynamic.Dispatch("Visum.Visum.20")
-    VISUM.loadversion(Netz)
+    VISUM.loadversion(Network_PT)
     VISUM.Filters.InitAll()
 
     #--Results table--#
-    if IsoChronen_Name in group5_Iso.keys(): del group5_Iso[IsoChronen_Name]
+    if Isochrone_Name in group5_Iso.keys(): del group5_Iso[Isochrone_Name]
     Spalten = np.dtype([('FromStop', 'int32'),('ToStop', 'int32'),('Time', 'f8'),('UH', 'i2'),('BH', 'i2')])
-    group5_Iso.create_dataset(IsoChronen_Name, data = np.array([],Spalten), dtype = Spalten, maxshape = (None,))
+    group5_Iso.create_dataset(Isochrone_Name, data = np.array([],Spalten), dtype = Spalten, maxshape = (None,))
     file5.flush()
-    IsoChronen = group5_Iso[IsoChronen_Name]
+    IsoChronen = group5_Iso[Isochrone_Name]
 
     #calculate Isochrones for places (distance measures) and orgins (gravity / contour measures).
-    if "Distance" in Modus: From_StopArea = np.unique(dsetP[Knoten_P])
-    else: From_StopArea = np.unique(dsetA[Knoten_A])
+    if "Distance" in Modus: From_StopArea = np.unique(dsetP[Node_P])
+    else: From_StopArea = np.unique(dsetA[Node_A])
     arcpy.AddMessage("> calculate Isochrones for "+str(len(From_StopArea))+" StopAreas")
 
     VISUM_Isochrones = VISUM.Analysis.Isochrones
@@ -193,7 +193,7 @@ def Isochrones():
         NE = VISUM.CreateNetElements()
         NE.Add(VISUM.Net.StopAreas.ItemByKey(int(Nr)))
         arcpy.AddMessage("> Isochrone "+str(n+1)+" of "+str(len(From_StopArea)))
-        VISUM_Isochrones.ExecutePuT(NE,"OV",str(Stunden[0])+":00:00",str(Stunden[1])+":00:00",int(Tag[0]),int(Tag[1]),Nachlauf*60*60,Zeitbezug) ##True == Arrival
+        VISUM_Isochrones.ExecutePuT(NE,"OV",str(Hours[0])+":00:00",str(Hours[1])+":00:00",int(Day[0]),int(Day[1]),Nachlauf*60*60,Zeitbezug) ##True == Arrival
 
         Ziel = np.array(VISUM.Net.StopAreas.GetMultiAttValues("No"))[:,1]
         Zeit = np.array(VISUM.Net.StopAreas.GetMultiAttValues("IsocTimePuT"))[:,1]/60
@@ -222,8 +222,8 @@ def Isochrones():
     return IsoChronen
 
 def Iso_Slice(dsetA,dsetP,Iso_I):
-    Orig_StopAreas = np.unique(dsetA[Knoten_A]) ##unique StopAreas at Origins
-    Place_StopAreas = np.unique(dsetP[Knoten_P]) ##unique StopAreas at Places
+    Orig_StopAreas = np.unique(dsetA[Node_A]) ##unique StopAreas at Origins
+    Place_StopAreas = np.unique(dsetP[Node_P]) ##unique StopAreas at Places
 
     if "Distance" in Modus: header = 20
     else: header = 10000
@@ -249,15 +249,15 @@ def Iso_Slice(dsetA,dsetP,Iso_I):
 
 def NMT():
     arcpy.AddMessage("> starting with proximity area ("+str(Radius)+" meter)")
-    arcpy.AddMessage("> maximum costs: "+Kosten+" = "+str(Max_Kosten))
+    arcpy.AddMessage("> maximum costs: "+Costs+" = "+str(Max_Costs))
     arcpy.Delete_management("ODMATRIX")
-    arcpy.Delete_management("S_Shape")
+    arcpy.Delete_management("P_Shape")
     arcpy.Delete_management("A_Shape")
 
     #OD-Matrix
-    if Filter_Group_P: tofind = 50
+    if Filter_Group_P or "Potential" in Modus: tofind = 70
     else: tofind = 2
-    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Kosten,Max_Kosten,tofind,[Kosten],"","","","","NO_LINES")
+    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,tofind,[Costs],"","","","","NO_LINES")
     p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
     Restriction_0 = list(p.restrictions) ##activate all restrictions
     p.restrictions = Restriction_0
@@ -266,38 +266,38 @@ def NMT():
 
     arcpy.MakeFeatureLayer_management(A_Shape, "A_Shape")
     fm_A = checkfm("A_Shape",A_Shape_ID)
-    if Filter_P: arcpy.MakeFeatureLayer_management(S_Shape, "S_Shape",Filter_P+">0")
-    else: arcpy.MakeFeatureLayer_management(S_Shape, "S_Shape")
-    fm_S = checkfm("S_Shape",P_Shape_ID)
+    if Filter_P: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape",Filter_P+">0")
+    else: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape")
+    fm_S = checkfm("P_Shape",P_Shape_ID)
 
-    if "Distance" in Modus: arcpy.SelectLayerByLocation_management("A_Shape","intersect","S_Shape",Radius)
-    if "Potential" in Modus: arcpy.SelectLayerByLocation_management("S_Shape","intersect","A_Shape",Radius)
+    if "Distance" in Modus: arcpy.SelectLayerByLocation_management("A_Shape","intersect","P_Shape",Radius)
+    if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","A_Shape",Radius)
 
     if fm_A == "":arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape","Name "+A_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape",fm_A,"","","","","CLEAR","","","EXCLUDE")
 
-    if fm_S == "": arcpy.AddLocations_na("ODMATRIX","Destinations","S_Shape","Name "+P_Shape_ID+\
+    if fm_S == "": arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Destinations","S_Shape",fm_S,"","","","","CLEAR","","","EXCLUDE")
+    else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_S,"","","","","CLEAR","","","EXCLUDE")
 
     arcpy.na.Solve("ODMATRIX")
 
-    df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Kosten]))
+    df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Costs]))
     df[[ID_A,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)
-    df = df.rename(columns = {'Total_'+Kosten:'Time'})
+    df = df.rename(columns = {'Total_'+Costs:'Time'})
     df["UH"], df["BH"], df["Costs"], df[k_A], df[k_P+"_P"] = [111,111,0,0,0]
 
     if "Potential" in Modus:
         Strukturgr.append(P_Shape_ID)
-        Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("S_Shape",Strukturgr))
+        Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("P_Shape",Strukturgr))
         df = pandas.merge(df,Strukturen,left_on=ID_P+'_P',right_on=P_Shape_ID)
         df = df.groupby([ID_P+'_P',ID_A]).first()
         df = df.reset_index()
 
     if "Distance" in Modus: df["FromStop"], df["ToStop"] = [0,0]
 
-    #arcpy.management.SaveToLayerFile("ODLayer",r'PATH\\CF_Ergebnis',"RELATIVE")
+    #arcpy.management.SaveToLayerFile("ODMATRIX",r'PATH\CF_Ergebnis',"RELATIVE")
 
     arcpy.AddMessage("> proximity area finished\n")
     return df
@@ -315,14 +315,14 @@ def potential():
         dsetA_l = dsetA[np.in1d(dsetA[ID_A],dsetA_l)]
         loop_from+=loop_range
 
-        dataiso = pandas.merge(dsetA_l,Iso,left_on=Knoten_A,right_on=fromStop)
+        dataiso = pandas.merge(dsetA_l,Iso,left_on=Node_A,right_on=fromStop)
         dataiso.loc[:,"Time"] = dataiso.loc[:,k_A]+dataiso.loc[:,"Time"]
         dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))-3].reset_index(drop=True) ##-3 from maximum time to keep array small
 
         try:
             dataiso = dataiso.sort_values([ID_A,toStop,"Time"])
             dataiso = dataiso.groupby([ID_A,toStop]).first().reset_index()
-            dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Knoten_P)
+            dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Node_P)
 
             dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
             dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))].reset_index(drop=True)
@@ -388,11 +388,11 @@ def potential():
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +"/".join(Modus)+\
-    "; Time_limitsn: "+"/".join(Time_limits)+"; IsoName: "+IsoChronen_Name+"; Origins: "+Tabelle_A+"; Places: "+Tabelle_P
+    "; Time_limitsn: "+"/".join(Time_limits)+"; IsoName: "+Isochrone_Name+"; Origins: "+Table_A+"; Places: "+Table_P
     if "Potential" in Modus: text = text + "; Measures: "+"/".join(Measures)
-    if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Kosten: "+str(Max_Kosten)
+    if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
-        text_v = text+"; Stunden: "+"/".join(Stunden)+"; Nachlauf: "+str(Nachlauf)
+        text_v = text+"; Hours: "+"/".join(Hours)+"; Nachlauf: "+str(Nachlauf)
         return text, text_v
     else: return text, ""
 
