@@ -10,7 +10,6 @@ import gc
 import h5py
 import numpy as np
 import pandas
-import sys
 import time
 import win32com.client.dynamic
 start_time = time.time()
@@ -37,7 +36,7 @@ Filter_Group_P = arcpy.GetParameterAsText(14)
 Network_PT = arcpy.GetParameterAsText(15)
 Hours = arcpy.GetParameterAsText(16).split(";")
 Isochrone_Name = arcpy.GetParameterAsText(17)
-Strukturgr = arcpy.GetParameterAsText(18).split(";")
+StructData = arcpy.GetParameterAsText(18).split(";")
 Measures = arcpy.GetParameterAsText(19).split(";")
 sumfak = arcpy.GetParameterAsText(20).split(";")
 potfak = arcpy.GetParameterAsText(21).split(";")
@@ -138,7 +137,7 @@ def HDF5_Inputs():
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
 
     if "Potential" in Modus:
-        for i in Strukturgr:
+        for i in StructData:
             if i in dsetA.dtypes: dsetA.drop(i, axis=1, inplace=True)
 
     return dsetA, dsetP, IsoChronen
@@ -291,8 +290,8 @@ def NMT():
     df.drop("Name", axis=1, inplace=True)
 
     if "Potential" in Modus:
-        Strukturgr.append(P_Shape_ID)
-        Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("P_Shape",Strukturgr))
+        StructData.append(P_Shape_ID)
+        Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("P_Shape",StructData))
         df = pandas.merge(df,Strukturen,left_on=ID_P+'_P',right_on=P_Shape_ID)
         df.drop(P_Shape_ID, axis=1, inplace=True)
         df = df.groupby([ID_P+'_P',ID_A]).first()
