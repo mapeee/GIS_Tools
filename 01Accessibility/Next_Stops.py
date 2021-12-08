@@ -3,12 +3,10 @@
 #-------------------------------------------------------------------------------
 # Name: Next_Stops
 # Purpose: Connecting places to next stops in a network
-#
 # Author:      mape
-#
 # Created:     02/09/2015 (new Version 2021)
 # Copyright:   (c) mape 2015
-# Licence:     <your licence>
+# Licence:     CC BY-NC 4.0
 #-------------------------------------------------------------------------------
 #arcpy.management.SaveToLayerFile("ODLayer",r'PATH\\CF_Ergebnis',"RELATIVE")
 
