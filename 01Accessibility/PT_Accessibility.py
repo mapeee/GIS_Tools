@@ -144,22 +144,22 @@ def HDF5_Inputs():
 
 def HDF5_Results():
     if "Potential" in Modus:
-        Spalten = [('Orig_ID', 'int32')]
+        Columns = [('Orig_ID', 'int32')]
         for i in Measures:
             if i[-4:] == "Expo":
                 for e in potfak:
                     e = str(e.split(".")[1])
                     if len(e)==2: e+="0"
-                    Spalten.append(((i+e).encode('ascii'),'int32'))
+                    Columns.append(((i+e).encode('ascii'),'int32'))
             elif i[-3:] == "Sum":
-                for e in sumfak: Spalten.append(((i+e).encode('ascii'),'int32'))
-            else: Spalten.append((i.encode('ascii'),'int32'))
+                for e in sumfak: Columns.append(((i+e).encode('ascii'),'int32'))
+            else: Columns.append((i.encode('ascii'),'int32'))
 
-    if "Distance" in Modus: Spalten = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
+    if "Distance" in Modus: Columns = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
     ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','int32'),('BH','int32'),('Group','i2')]
 
     if Table_R in group5_Results.keys(): del group5_Results[Table_R]
-    group5_Results.create_dataset(Table_R, data=np.array([],Spalten), dtype=np.dtype(Spalten), maxshape = (None,))
+    group5_Results.create_dataset(Table_R, data=np.array([],Columns), dtype=np.dtype(Columns), maxshape = (None,))
     Results_T = group5_Results[Table_R]
     Results_T.attrs.create("Parameter",str(text[0]))
     file5.flush()
@@ -177,8 +177,8 @@ def Isochrones():
 
     #--Results table--#
     if Isochrone_Name in group5_Iso.keys(): del group5_Iso[Isochrone_Name]
-    Spalten = np.dtype([('FromStop', 'int32'),('ToStop', 'int32'),('Time', 'f8'),('UH', 'i2'),('BH', 'i2')])
-    group5_Iso.create_dataset(Isochrone_Name, data = np.array([],Spalten), dtype = Spalten, maxshape = (None,))
+    Columns = np.dtype([('FromStop', 'int32'),('ToStop', 'int32'),('Time', 'f8'),('UH', 'i2'),('BH', 'i2')])
+    group5_Iso.create_dataset(Isochrone_Name, data = np.array([],Columns), dtype = Columns, maxshape = (None,))
     file5.flush()
     IsoChronen = group5_Iso[Isochrone_Name]
 
