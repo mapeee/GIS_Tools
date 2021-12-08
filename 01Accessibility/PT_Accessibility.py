@@ -103,19 +103,19 @@ def distance():
         Result.loc[Result["ToStop"]==Result["FromStop"],"UH"] = 111 ##same StopArea == dirct by foot
         Result.loc[Result["ToStop"]==Result["FromStop"],"BH"] = 111
         Result = np.array(Result)
-        oldsize = len(Ergebnis_T)
+        oldsize = len(Results_T)
         sizer = oldsize + len(Result)
-        Ergebnis_T.resize((sizer,))
+        Results_T.resize((sizer,))
         Result = list(map(tuple, Result))
-        Ergebnis_T[oldsize:sizer] = Result
+        Results_T[oldsize:sizer] = Result
         file5.flush()
 
 def HDF5():
     file5 = h5py.File(Database,'r+') ##HDF5-File
     group5 = file5[Group_A]
     group5_Iso = file5[Group_I]
-    group5_Ergebnisse = file5[Group_R]
-    return file5, group5, group5_Iso, group5_Ergebnisse
+    group5_Results = file5[Group_R]
+    return file5, group5, group5_Iso, group5_Results
 
 def HDF5_Inputs():
     dsetA = group5[Table_A]
@@ -159,13 +159,13 @@ def HDF5_Results():
     if "Distance" in Modus: Spalten = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
     ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','int32'),('BH','int32'),('Group','i2')]
 
-    if Table_R in group5_Ergebnisse.keys(): del group5_Ergebnisse[Table_R]
-    group5_Ergebnisse.create_dataset(Table_R, data=np.array([],Spalten), dtype=np.dtype(Spalten), maxshape = (None,))
-    Ergebnis_T = group5_Ergebnisse[Table_R]
-    Ergebnis_T.attrs.create("Parameter",str(text[0]))
+    if Table_R in group5_Results.keys(): del group5_Results[Table_R]
+    group5_Results.create_dataset(Table_R, data=np.array([],Spalten), dtype=np.dtype(Spalten), maxshape = (None,))
+    Results_T = group5_Results[Table_R]
+    Results_T.attrs.create("Parameter",str(text[0]))
     file5.flush()
 
-    return Ergebnis_T
+    return Results_T
 
 def Isochrones():
     arcpy.AddMessage("> calculate VISUM Isochrones")
@@ -387,9 +387,9 @@ def potential():
                 else: pass
 
             Result =[tuple(Result)]
-            oldsize = len(Ergebnis_T)
-            Ergebnis_T.resize((oldsize+1,))
-            Ergebnis_T[oldsize:oldsize+1] = Result
+            oldsize = len(Results_T)
+            Results_T.resize((oldsize+1,))
+            Results_T[oldsize:oldsize+1] = Result
             file5.flush()
         del dataiso
         gc.collect()
@@ -406,11 +406,11 @@ def Text():
 
 #--preparation--#
 text = Text()
-file5, group5, group5_Iso, group5_Ergebnisse = HDF5()
+file5, group5, group5_Iso, group5_Results = HDF5()
 dsetA, dsetP, IsoChronen = HDF5_Inputs()
 if "NMT" in Modus: proximity = NMT()
 if "Isochrones" in Modus: IsoChronen = Isochrones()
-Ergebnis_T = HDF5_Results()
+Results_T = HDF5_Results()
 
 #--measures--#
 arcpy.AddMessage("> calculate measures\n")
