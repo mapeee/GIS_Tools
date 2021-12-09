@@ -61,20 +61,19 @@ Day = ("1;1").split(";")
 
 
 def checkfm(FC, FC_ID):
-    fm = ""
     for field in arcpy.Describe(FC).fields:
         if "SnapX" in field.name:
             fm = "Name "+FC_ID+" 0; SourceID SourceID_NMIV 0;SourceOID SourceOID_NMIV 0"\
             ";PosAlong PosAlong_NMIV 0;SideOfEdge SideOfEdge_NMIV 0; Attr_Minutes # #"
-    return fm
+            return fm
 
 def distance():
-    if Filter_Group_P: Gruppen = np.unique(dsetP[Filter_Group_P])
-    else: Gruppen = [1]
-    for i, m in enumerate(Gruppen):
+    if Filter_Group_P: Groups = np.unique(dsetP[Filter_Group_P])
+    else: Groups = [1]
+    for i, m in enumerate(Groups):
         if Filter_Group_P:
             dataG = dsetP[dsetP[Filter_Group_P]==m]
-            arcpy.AddMessage("> group "+str(i+1)+"/"+str(len(Gruppen))+" with "+str(len(np.unique(dataG[ID_P])))+" places")
+            arcpy.AddMessage("> group "+str(i+1)+"/"+str(len(Groups))+" with "+str(len(np.unique(dataG[ID_P])))+" places")
         else:
             dataG = dsetP.copy()
             arcpy.AddMessage("> "+str(len(np.unique(dsetP[ID_P])))+" places")
@@ -255,7 +254,7 @@ def NMT():
 
     #OD-Matrix
     if Filter_Group_P: tofind = 50
-    elif "Potential" in Modus: tofind = 100
+    elif "Potential" in Modus: tofind = ""
     else: tofind = 2
     arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,tofind,[Costs],"","","","","NO_LINES")
     p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
@@ -268,18 +267,18 @@ def NMT():
     fm_A = checkfm("A_Shape",A_Shape_ID)
     if Filter_P: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape",Filter_P+">0")
     else: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape")
-    fm_S = checkfm("P_Shape",P_Shape_ID)
+    fm_P = checkfm("P_Shape",P_Shape_ID)
 
     if "Distance" in Modus: arcpy.SelectLayerByLocation_management("A_Shape","intersect","P_Shape",Radius)
     if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","A_Shape",Radius)
 
-    if fm_A == "":arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape","Name "+A_Shape_ID+\
+    if fm_A is None:arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape","Name "+A_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape",fm_A,"","","","","CLEAR","","","EXCLUDE")
 
-    if fm_S == "": arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
+    if fm_P is None: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_S,"","","","","CLEAR","","","EXCLUDE")
+    else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
     arcpy.na.Solve("ODMATRIX")
 
