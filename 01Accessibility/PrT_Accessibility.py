@@ -39,25 +39,6 @@ sumfak_t = arcpy.GetParameterAsText(14).split(";")
 sumfak_d = arcpy.GetParameterAsText(15).split(";")
 potfak = arcpy.GetParameterAsText(16).split(";")
 
-
-##PrT = "Non-Motorized"
-##Modus = "Potential"
-##Database = r'C:\Users\peter\Desktop\testh5.hdf5'
-##Group_R = "Ergebnisse"
-##Table_R = "E_HVV_EW"
-##A_Shape = r'D:\02Geodaten\Material.gdb\Raster\MRH_100_EW'
-##P_Shape = r'D:\02Geodaten\Material.gdb\Raster\MRH_100_EW'
-##Filter_P = "EW"
-##Filter_Group_P = None
-##Network = r'D:\02Geodaten\Material.gdb\Wegenetz\Wegenetz'
-##Costs = "tFuss"
-##Max_Costs = 20
-##StructField = "EW".split(";")
-##Measures = "EW__Sum;EW__Expo".split(";")
-##sumfak_t = "10;20".split(";")
-##sumfak_d = None
-##potfak = "-0.05;-0.02".split(";")
-
 ID_A = "ID"
 ID_P = "ID"
 Barriers = None
