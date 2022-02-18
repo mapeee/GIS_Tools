@@ -43,6 +43,8 @@ ID_A = "ID"
 ID_P = "ID"
 Barriers = None
 if sumfak_d == ['']: sumfak_d = None
+if PrT == "Motorized": loops = 100
+else: loops = 1000
 
 
 def checkfm(FC, FC_ID):
@@ -154,14 +156,14 @@ def ODLayer():
         " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
         else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
-def potential(origins):
+def potential(origins,loop):
     global n, Column
     global Result, Column, e, routes, ID_A
-    arcpy.AddMessage("> origins from "+str(origins)+" to "+str(origins+100)+" from "+str(Origins))
+    arcpy.AddMessage("> origins from "+str(origins)+" to "+str(origins+loop)+" from "+str(Origins))
     arcpy.Delete_management("A_Shape")
     for field in arcpy.Describe(A_Shape).fields:
             if field.type == "OID": OID = str(field.name)
-    arcpy.MakeFeatureLayer_management(A_Shape, "A_Shape",OID+" >= "+str(origins)+" and "+OID+" < "+str(origins+100))
+    arcpy.MakeFeatureLayer_management(A_Shape, "A_Shape",OID+" >= "+str(origins)+" and "+OID+" < "+str(origins+loop))
 
     fm_A = checkfm("A_Shape",ID_A)
     if fm_A is None:arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape","Name "+ID_A+\
@@ -233,7 +235,7 @@ if Modus == "Distance":
 
 if "Potential" in Modus:
     Origins = int(arcpy.GetCount_management(A_Shape).getOutput(0))
-    for origin_l in range(0,Origins,100): potential(origin_l)
+    for origin_l in range(0,Origins,loops): potential(origin_l,loops)
 
 arcpy.AddMessage("> "+Modus+" measures finished")
 
