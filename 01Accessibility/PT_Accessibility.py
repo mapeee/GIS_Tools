@@ -280,7 +280,7 @@ def NMT():
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
-    arcpy.na.Solve("ODMATRIX")
+    arcpy.na.Solve("ODMATRIX","","CONTINUE")
 
     df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Costs]))
     df[[ID_A,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)

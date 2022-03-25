@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: cp1252 -*-
 #-------------------------------------------------------------------------------
-# Name: Next_Stops
-# Purpose: Connecting places to next stops in a network
+# Name:        Next_Stops
+# Purpose:     Connecting places to next stops in a network
 # Author:      mape
 # Created:     02/09/2015 (new Version 2021)
 # Copyright:   (c) mape 2015
 # Licence:     CC BY-NC 4.0
 #-------------------------------------------------------------------------------
-#arcpy.management.SaveToLayerFile("ODLayer",r'PATH\\CF_Ergebnis',"RELATIVE")
+#arcpy.management.SaveToLayerFile("ODLayer",'PATH/ODLayer.lyr',"RELATIVE")
 
 import arcpy
 from datetime import date
@@ -34,6 +34,7 @@ BahnFeld = arcpy.GetParameterAsText(11)
 Potential = arcpy.GetParameterAsText(12).split(";")
 Barrieren = arcpy.GetParameterAsText(13)
 Modus = ["bus",int(Anzahl.split(",")[0])],["train",int(Anzahl.split(",")[1])]
+
 
 def checkfm(FC, FC_ID):
     OID, fm = "", ""
@@ -86,7 +87,7 @@ def HDF5(Datenbank,Potential,results):
         for i in range(len(results)):
             index = np.where(Strukturen[Start_ID.encode('ascii')]==results[i][0])[0][0]
             for h in range(len(Strukturen[index])-1):
-                w = Strukturen[index][h+1] ##+1, um die erste Spalte zu überspringen
+                w = Strukturen[index][h+1] ##+1, um die erste Spalte zu Ã¼berspringen
                 results[i] = results[i]+(w,)
 
     #--Results tablen--#
@@ -96,8 +97,8 @@ def HDF5(Datenbank,Potential,results):
     dset5 = group5.create_dataset(Result_table, data=data, dtype=Fields)
 
     #--HDF5-Attributes--#
-    text = "date: "+date.today().strftime("%B %d, %Y")+", places: "+Start+", stops: "+\
-    Ziel+", costs: "+Costs+", bus, train: "+Anzahl+", maximal costs: "+str(MaxCosts)
+    text = "date: "+date.today().strftime("%B %d, %Y")+", places: "+str(Start)+", stops: "+\
+    str(Ziel)+", costs: "+str(Costs)+", bus, train: "+str(Anzahl)+", maximal costs: "+str(MaxCosts)
     dset5.attrs.create("Parameters",str(text))
     return file5
 
@@ -109,6 +110,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
     if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
 
     arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
+
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
@@ -120,7 +122,7 @@ def ODRouting(FC,FC_ID,OID,row,fieldmap):
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","CLEAR","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
-    try: arcpy.Solve_na("ODLayer","SKIP") ##SKIP:Not Located is skipped
+    try: arcpy.Solve_na("ODLayer","SKIP","CONTINUE") ##SKIP:Not Located is skipped
     except:
         arcpy.AddMessage("> error "+str(row)+" bis "+str(row+5000))
         arcpy.Delete_management("places")

@@ -1,16 +1,17 @@
 # -*- coding: cp1252 -*-
 #!/usr/bin/python
-#Skript, mit dem der Datenaustausch mit HDF5-Datenbanken gelingt.
-#Marcus September 2015; new Version December 2021
-#für Python 2.7.5
+#-------------------------------------------------------------------------------
+# Name:        GIS_HDF5
+# Purpose:     Exchange of Data betweeen HDF5 and ESRI GeoDatabase
+# Author:      mape
+# Created:     02/09/2015 (new Version 2021)
+# Copyright:   (c) mape 2015
+# Licence:     CC BY-NC 4.0
+#-------------------------------------------------------------------------------
 
-#---Vorbereitung---#
-import sys
 import arcpy
-import time
 import h5py
 import numpy as np
-
 
 #--Parameter--#
 Methode = arcpy.GetParameterAsText(0)
@@ -19,8 +20,8 @@ Felder = arcpy.GetParameterAsText(2)
 Felder = Felder.split(";")
 Database = arcpy.GetParameterAsText(3)
 Tabelle_E = arcpy.GetParameterAsText(4)
-TabelleHDF5 = arcpy.GetParameterAsText(5).split(";")
-Group = arcpy.GetParameterAsText(6)
+Group = arcpy.GetParameterAsText(5)
+TabelleHDF5 = arcpy.GetParameterAsText(6).split(";")
 Path_GIS = arcpy.GetParameterAsText(7)
 
 #--calculation--#
@@ -35,7 +36,9 @@ if Methode == "HDF5_to_GIS":
             arcpy.Delete_management(Path_GIS+"/"+i)
             arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i)
 
-else: group5.create_dataset(Tabelle_E, data=arcpy.da.FeatureClassToNumPyArray(FC,Felder), dtype=array.dtype)
+else:
+    data_FC = arcpy.da.FeatureClassToNumPyArray(FC,Felder)
+    group5.create_dataset(Tabelle_E, data=data_FC, dtype=data_FC.dtype)
 
 #--End--#
 file5.flush()
