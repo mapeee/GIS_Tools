@@ -170,7 +170,7 @@ def Isochrones():
 
     if "Distance" in Modus: Zeitbezug = True
 
-    VISUM = win32com.client.dynamic.Dispatch("Visum.Visum.20")
+    VISUM = win32com.client.dynamic.Dispatch("Visum.Visum.22")
     VISUM.loadversion(Network_PT)
     VISUM.Filters.InitAll()
 
@@ -215,7 +215,7 @@ def Isochrones():
     file5.flush()
     del VISUM
 
-    arcpy.AddMessage("> finished after: "+str(int((time.clock() - start_time)/60))+" minutes\n")
+    arcpy.AddMessage("> finished after: "+str(int(time.time()-start_time)/60)+" minutes\n")
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
     return IsoChronen
 
@@ -392,12 +392,12 @@ def potential():
         gc.collect()
 
 def Text():
-    text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +"/".join(Modus)+\
-    "; Time_limits: "+"/".join(Time_limits)+"; IsoName: "+Isochrone_Name+"; Origins: "+Table_A+"; Places: "+Table_P
-    if "Potential" in Modus: text = text + "; Measures: "+"/".join(Measures)
+    text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
+    "; Time_limits: "+str("/".join(Time_limits))+"; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_A)+"; Places: "+str(Table_P)
+    if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
-        text_v = text+"; Hours: "+"/".join(Hours)+"; Nachlauf: "+str(Nachlauf)
+        text_v = text+"; Hours: "+str("/".join(Hours))+"; Nachlauf: "+str(Nachlauf)
         return text, text_v
     else: return text, ""
 
