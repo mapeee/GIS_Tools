@@ -211,10 +211,10 @@ def potential(origins,loop):
         file5.flush()
 
 def Text():
-    text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +PrT+"; "+Modus+"; Costs: "+Costs+\
-    "; Max-Costs: "+str(Max_Costs)+"; Origins: "+A_Shape.split("\\")[-1]+"; Places: "+P_Shape.split("\\")[-1]
-    if "Potential" in Modus: text = text + "; Measures: "+"/".join(Measures)
-    if Filter_Group_P: text = text + "; Filter Group: "+Filter_Group_P
+    text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str(PrT)+"; "+str(Modus)+"; Costs: "+str(Costs)+\
+    "; Max-Costs: "+str(Max_Costs)+"; Origins: "+str(A_Shape.split("\\")[-1])+"; Places: "+str(P_Shape.split("\\")[-1])
+    if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
+    if Filter_Group_P: text = text + "; Filter Group: "+str(Filter_Group_P)
     return text
 
 #--preparation--#
