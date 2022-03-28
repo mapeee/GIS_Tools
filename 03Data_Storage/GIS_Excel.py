@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 #!/usr/bin/python
 #-------------------------------------------------------------------------------
-# Name:        GIS_HDF5
+# Name:        GIS_Excel
 # Purpose:     Exchange of Data betweeen HDF5 and Excel
 # Author:      mape
 # Created:     25/03/2022
@@ -13,6 +13,7 @@ import arcpy
 import h5py
 import numpy as np
 import openpyxl as opxl
+from openpyxl.styles import Font
 import pandas as pd
 
 #--Parameter--#
@@ -33,7 +34,10 @@ for i in dsetHDF5:
 
     wb = opxl.load_workbook(path_xls)
     sheet = wb.active
-    sheet.cell(1,1,unicode(data.attrs.values()[0], errors='ignore'))
+    try:
+        sheet.cell(1,1,unicode(data.attrs.values()[0], errors='ignore'))
+        sheet.cell(1,1).font = Font(color = '00FF0000')
+    except: pass #if no attributes defined
     wb.save(path_xls)
 
 #--End--#
