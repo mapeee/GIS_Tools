@@ -101,6 +101,8 @@ def distance():
         Result["Group"] = m
         Result.loc[Result["ToStop"]==Result["FromStop"],"UH"] = 111 ##same StopArea == dirct by foot
         Result.loc[Result["ToStop"]==Result["FromStop"],"BH"] = 111
+        Result.loc[(Result['UH']==0) & (Result['BH']==0),"UH"] = 111 ##transfers over stopareas in same stop
+        Result.loc[(Result['UH']==111) & (Result['BH']==0),"BH"] = 111
         Result = np.array(Result)
         oldsize = len(Results_T)
         sizer = oldsize + len(Result)
