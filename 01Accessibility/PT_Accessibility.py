@@ -20,38 +20,39 @@ arcpy.AddMessage("> starting\n")
 #--ArcGIS Parameter--#
 Modus = arcpy.GetParameterAsText(0).split(";")
 Database = arcpy.GetParameterAsText(1)
-Group_A = arcpy.GetParameterAsText(2)
+Group_O = arcpy.GetParameterAsText(2)
 Group_I = arcpy.GetParameterAsText(3)
 Group_R = arcpy.GetParameterAsText(4)
 Table_R = arcpy.GetParameterAsText(5)
 Time_limits = arcpy.GetParameterAsText(6).split(";")
-Table_A = arcpy.GetParameterAsText(7)
-k_A = arcpy.GetParameterAsText(8)
-kmh_A = int(arcpy.GetParameterAsText(9))
+Table_O = arcpy.GetParameterAsText(7)
+k_O = arcpy.GetParameterAsText(8)
+kmh_O = int(arcpy.GetParameterAsText(9))
 Table_P = arcpy.GetParameterAsText(10)
 k_P = arcpy.GetParameterAsText(11)
 kmh_P = int(arcpy.GetParameterAsText(12))
 Filter_P = arcpy.GetParameterAsText(13)
 Filter_Group_P = arcpy.GetParameterAsText(14)
-Network_PT = arcpy.GetParameterAsText(15)
-Hours = arcpy.GetParameterAsText(16).split(";")
-Isochrone_Name = arcpy.GetParameterAsText(17)
-StructData = arcpy.GetParameterAsText(18).split(";")
-Measures = arcpy.GetParameterAsText(19).split(";")
-sumfak = arcpy.GetParameterAsText(20).split(";")
-potfak = arcpy.GetParameterAsText(21).split(";")
-A_Shape = arcpy.GetParameterAsText(22)
-P_Shape = arcpy.GetParameterAsText(23)
-Network = arcpy.GetParameterAsText(24)
-Radius = int(arcpy.GetParameterAsText(25))
-Costs = arcpy.GetParameterAsText(26)
-Max_Costs = int(arcpy.GetParameterAsText(27))
+to_find = int(arcpy.GetParameterAsText(15))
+Network_PT = arcpy.GetParameterAsText(16)
+Hours = arcpy.GetParameterAsText(17).split(";")
+Isochrone_Name = arcpy.GetParameterAsText(18)
+StructData = arcpy.GetParameterAsText(19).split(";")
+Measures = arcpy.GetParameterAsText(20).split(";")
+sumfak = arcpy.GetParameterAsText(21).split(";")
+potfak = arcpy.GetParameterAsText(22).split(";")
+O_Shape = arcpy.GetParameterAsText(23)
+P_Shape = arcpy.GetParameterAsText(24)
+Network = arcpy.GetParameterAsText(25)
+Radius = int(arcpy.GetParameterAsText(26))
+Costs = arcpy.GetParameterAsText(27)
+Max_Costs = int(arcpy.GetParameterAsText(28))
 
-Node_A = "Stop_NO"
+Node_O = "Stop_NO"
 Node_P = "Stop_NO"
-ID_A = "Start_ID"
+ID_O = "Start_ID"
 ID_P = "Start_ID"
-A_Shape_ID = "ID"
+O_Shape_ID = "ID"
 P_Shape_ID = "ID"
 Barriers = "" ##Path to Shape
 fromStop = "FromStop"
@@ -84,8 +85,8 @@ def distance():
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
         gb = IsoP.groupby(fromStop)
         IsoP = IsoP.iloc[gb["Time"].idxmin()]
-        IsoA = pandas.merge(dsetA,IsoP,left_on=Node_A,right_on=fromStop)
-        IsoA["Time"] = IsoA[k_A]+IsoA["Time"]
+        IsoA = pandas.merge(dsetA,IsoP,left_on=Node_O,right_on=fromStop)
+        IsoA["Time"] = IsoA[k_O]+IsoA["Time"]
 
         if "NMT" in Modus:
             if Filter_Group_P:
@@ -93,10 +94,10 @@ def distance():
                 IsoA = IsoA.append(Proxy, ignore_index = True)
             else: IsoA = IsoA.append(proximity, ignore_index = True)
 
-        gb = IsoA.groupby(ID_A)["Time"].idxmin()
+        gb = IsoA.groupby(ID_O)["Time"].idxmin()
         IsoA = IsoA.iloc[gb]
 
-        Result = IsoA[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_A, k_P+"_P", "UH", "BH"]]
+        Result = IsoA[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_O, k_P+"_P", "UH", "BH"]]
         Result["Group"] = m
         Result.loc[Result["ToStop"]==Result["FromStop"],"UH"] = 111 ##same StopArea == dirct by foot
         Result.loc[Result["ToStop"]==Result["FromStop"],"BH"] = 111
@@ -110,17 +111,17 @@ def distance():
 
 def HDF5():
     file5 = h5py.File(Database,'r+') ##HDF5-File
-    group5 = file5[Group_A]
+    group5 = file5[Group_O]
     group5_Iso = file5[Group_I]
     group5_Results = file5[Group_R]
     return file5, group5, group5_Iso, group5_Results
 
 def HDF5_Inputs():
-    dsetA = group5[Table_A]
-    if "Meter" == k_A:
-        dsetA = dsetA[dsetA[k_A]<int((kmh_A/3.6*60)*int(Time_limits[1]))]
-        dsetA[k_A] = dsetA[k_A]/(kmh_A/3.6*60) ##replace distance by time
-    else: dsetA = dsetA[dsetA[k_A]<int(Time_limits[1])]
+    dsetA = group5[Table_O]
+    if "Meter" == k_O:
+        dsetA = dsetA[dsetA[k_O]<int((kmh_O/3.6*60)*int(Time_limits[1]))]
+        dsetA[k_O] = dsetA[k_O]/(kmh_O/3.6*60) ##replace distance by time
+    else: dsetA = dsetA[dsetA[k_O]<int(Time_limits[1])]
 
     dsetP = group5[Table_P]
     if "Meter" == k_P:
@@ -183,7 +184,7 @@ def Isochrones():
 
     #calculate Isochrones for places (distance measures) and orgins (gravity / contour measures).
     if "Distance" in Modus: From_StopArea = np.unique(dsetP[Node_P])
-    else: From_StopArea = np.unique(dsetA[Node_A])
+    else: From_StopArea = np.unique(dsetA[Node_O])
     arcpy.AddMessage("> calculate Isochrones for "+str(len(From_StopArea))+" StopAreas")
 
     VISUM_Isochrones = VISUM.Analysis.Isochrones
@@ -220,7 +221,7 @@ def Isochrones():
     return IsoChronen
 
 def Iso_Slice(dsetA,dsetP,Iso_I):
-    Orig_StopAreas = np.unique(dsetA[Node_A]) ##unique StopAreas at Origins
+    Orig_StopAreas = np.unique(dsetA[Node_O]) ##unique StopAreas at Origins
     Place_StopAreas = np.unique(dsetP[Node_P]) ##unique StopAreas at Places
 
     if "Distance" in Modus: header = 20
@@ -250,31 +251,31 @@ def NMT():
     arcpy.AddMessage("> maximum costs: "+Costs+" = "+str(Max_Costs))
     arcpy.Delete_management("ODMATRIX")
     arcpy.Delete_management("P_Shape")
-    arcpy.Delete_management("A_Shape")
+    arcpy.Delete_management("O_Shape")
 
     #OD-Matrix
-    if Filter_Group_P: tofind = 50
-    elif "Potential" in Modus: tofind = ""
-    else: tofind = 2
-    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,tofind,[Costs],"","","","","NO_LINES")
+    if Filter_Group_P: NMT_find = 50
+    elif "Potential" in Modus: NMT_find = ""
+    else: NMT_find = to_find+1
+    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,NMT_find,[Costs],"","","","","NO_LINES")
     p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
     Restriction_0 = list(p.restrictions) ##activate all restrictions
     p.restrictions = Restriction_0
     del p
     if Barriers != "": arcpy.AddLocations_na("ODMATRIX","Line Barriers",Barriers,"","")
 
-    arcpy.MakeFeatureLayer_management(A_Shape, "A_Shape")
-    fm_A = checkfm("A_Shape",A_Shape_ID)
+    arcpy.MakeFeatureLayer_management(O_Shape, "O_Shape")
+    fm_O = checkfm("O_Shape",O_Shape_ID)
     if Filter_P: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape",Filter_P+">0")
     else: arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape")
     fm_P = checkfm("P_Shape",P_Shape_ID)
 
-    if "Distance" in Modus: arcpy.SelectLayerByLocation_management("A_Shape","intersect","P_Shape",Radius)
-    if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","A_Shape",Radius)
+    if "Distance" in Modus: arcpy.SelectLayerByLocation_management("O_Shape","intersect","P_Shape",Radius)
+    if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","O_Shape",Radius)
 
-    if fm_A is None:arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape","Name "+A_Shape_ID+\
+    if fm_O is None:arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape","Name "+O_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Origins","A_Shape",fm_A,"","","","","CLEAR","","","EXCLUDE")
+    else: arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape",fm_O,"","","","","CLEAR","","","EXCLUDE")
 
     if fm_P is None: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
     " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
@@ -283,9 +284,9 @@ def NMT():
     arcpy.na.Solve("ODMATRIX","","CONTINUE")
 
     df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Costs]))
-    df[[ID_A,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)
+    df[[ID_O,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)
     df = df.rename(columns = {'Total_'+Costs:'Time'})
-    df["UH"], df["BH"], df[k_A], df[k_P+"_P"] = [111,111,0,0]
+    df["UH"], df["BH"], df[k_O], df[k_P+"_P"] = [111,111,0,0]
     df.drop("Name", axis=1, inplace=True)
 
     if "Potential" in Modus:
@@ -293,11 +294,11 @@ def NMT():
         Strukturen = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("P_Shape",StructData))
         df = pandas.merge(df,Strukturen,left_on=ID_P+'_P',right_on=P_Shape_ID)
         df.drop(P_Shape_ID, axis=1, inplace=True)
-        df = df.groupby([ID_P+'_P',ID_A]).first()
+        df = df.groupby([ID_P+'_P',ID_O]).first()
         df = df.reset_index()
 
     if "Distance" in Modus: df["FromStop"], df["ToStop"] = [0,0]
-    if "Potential" in Modus: df.drop([k_A,k_P+"_P"], axis=1, inplace=True)
+    if "Potential" in Modus: df.drop([k_O,k_P+"_P"], axis=1, inplace=True)
 
     #arcpy.management.SaveToLayerFile("ODMATRIX",r'PATH\CF_Ergebnis',"RELATIVE")
 
@@ -306,44 +307,44 @@ def NMT():
 
 def potential():
     arcpy.AddMessage("> calculate potential measures")
-    Orig = np.unique(dsetA[ID_A])
+    Orig = np.unique(dsetA[ID_O])
     loop_from, loop_range = 0, 100
     loops = (len(Orig)/loop_range)+1
     Iso = Iso_Slice(dsetA,dsetP,IsoChronen)
 
     for loop in range(loops):
         arcpy.AddMessage("> loop "+str(loop+1)+"/"+str(loops))
-        dsetA_l = Orig[loop_from:loop_from+loop_range]
-        dsetA_l = dsetA[np.in1d(dsetA[ID_A],dsetA_l)]
+        dsetO_l = Orig[loop_from:loop_from+loop_range]
+        dsetO_l = dsetA[np.in1d(dsetA[ID_O],dsetO_l)]
         loop_from+=loop_range
 
-        dataiso = pandas.merge(dsetA_l,Iso,left_on=Node_A,right_on=fromStop)
-        dataiso.loc[:,"Time"] = dataiso.loc[:,k_A]+dataiso.loc[:,"Time"]
+        dataiso = pandas.merge(dsetO_l,Iso,left_on=Node_O,right_on=fromStop)
+        dataiso.loc[:,"Time"] = dataiso.loc[:,k_O]+dataiso.loc[:,"Time"]
         dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))-3].reset_index(drop=True) ##-3 from maximum time to keep array small
 
         try:
-            dataiso = dataiso.sort_values([ID_A,toStop,"Time"])
-            dataiso = dataiso.groupby([ID_A,toStop]).first().reset_index()
+            dataiso = dataiso.sort_values([ID_O,toStop,"Time"])
+            dataiso = dataiso.groupby([ID_O,toStop]).first().reset_index()
             dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Node_P)
             dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
 
             if "NMT" in Modus:
-                proxy = proximity[np.in1d(proximity[ID_A],dataiso[ID_A+"_x"])]
-                proxy = proxy.rename(columns = {ID_A:ID_A+'_x',ID_P+'_P':ID_P+'_y'})
+                proxy = proximity[np.in1d(proximity[ID_O],dataiso[ID_O+"_x"])]
+                proxy = proxy.rename(columns = {ID_O:ID_O+'_x',ID_P+'_P':ID_P+'_y'})
                 dataiso = dataiso.append(proxy, ignore_index = True)
 
             dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))].reset_index(drop=True)
-            dataiso = dataiso.sort_values([ID_A+"_x",ID_P+"_y","Time"])
-            dataiso = dataiso.groupby([ID_A+"_x",ID_P+"_y"]).first().reset_index()
+            dataiso = dataiso.sort_values([ID_O+"_x",ID_P+"_y","Time"])
+            dataiso = dataiso.groupby([ID_O+"_x",ID_P+"_y"]).first().reset_index()
 
         except:
             arcpy.AddMessage("> error in loop "+str(loop+1))
             continue
 
-        Origins = np.unique(dsetA_l[ID_A])
+        Origins = np.unique(dsetO_l[ID_O])
         for i in Origins:
             Result = [i]
-            IsoP = dataiso[dataiso[ID_A+"_x"]==i].reset_index(drop=False)
+            IsoP = dataiso[dataiso[ID_O+"_x"]==i].reset_index(drop=False)
 
             #--Berechne die Indikatorwerte--#
             for e in Measures:
@@ -393,7 +394,7 @@ def potential():
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
-    "; Time_limits: "+str("/".join(Time_limits))+"; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_A)+"; Places: "+str(Table_P)
+    "; Time_limits: "+str("/".join(Time_limits))+"; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
     if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
