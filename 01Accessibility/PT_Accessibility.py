@@ -94,10 +94,12 @@ def distance():
                 IsoA = IsoA.append(Proxy, ignore_index = True)
             else: IsoA = IsoA.append(proximity, ignore_index = True)
 
-        gb = IsoA.groupby(ID_O)["Time"].idxmin()
-        IsoA = IsoA.iloc[gb]
+        gb = IsoA.groupby([ID_O,ID_P+"_P"])["Time"].idxmin()
+        IsoA = IsoA.iloc[gb].sort_values([ID_O,"Time"])
+        IsoA["tofind"] = IsoA.groupby([ID_O])['Time'].cumcount()+1
+        IsoA = IsoA.groupby(ID_O).head(to_find)
 
-        Result = IsoA[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_O, k_P+"_P", "UH", "BH"]]
+        Result = IsoA[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_O, k_P+"_P", "UH", "BH", "tofind"]]
         Result["Group"] = m
         Result.loc[Result["ToStop"]==Result["FromStop"],"UH"] = 111 ##same StopArea == dirct by foot
         Result.loc[Result["ToStop"]==Result["FromStop"],"BH"] = 111
@@ -158,7 +160,7 @@ def HDF5_Results():
             else: Columns.append((i.encode('ascii'),'int32'))
 
     if "Distance" in Modus: Columns = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
-    ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','int32'),('BH','int32'),('Group','i2')]
+    ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','i2'),('BH','i2'),('tofind','i2'),('Group','i2')]
 
     if Table_R in group5_Results.keys(): del group5_Results[Table_R]
     group5_Results.create_dataset(Table_R, data=np.array([],Columns), dtype=np.dtype(Columns), maxshape = (None,))
