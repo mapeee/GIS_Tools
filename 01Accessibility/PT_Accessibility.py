@@ -83,12 +83,12 @@ def distance():
 
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
-        gb = IsoP.groupby(fromStop)
+        gb = IsoP.groupby([ID_P+"_P",fromStop])
         IsoP = IsoP.iloc[gb["Time"].idxmin()]
         IsoO = pandas.merge(dsetO,IsoP,left_on=Node_O,right_on=fromStop)
         IsoO["Time"] = IsoO[k_O]+IsoO["Time"]
 
-        if "NMT" in Modus:
+        if "NMT" in Modus and len(proximity)>0:
             if Filter_Group_P:
                 Proxy = proximity[proximity[ID_P+"_P"].isin(dataG[ID_P+"_P"])]
                 IsoO = IsoO.append(Proxy, ignore_index = True)
@@ -288,6 +288,8 @@ def NMT():
     arcpy.na.Solve("ODMATRIX","","CONTINUE")
 
     df = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name", "Total_"+Costs]))
+    if len(df) == 0: return df
+
     df[[ID_O,ID_P+"_P"]] = df.Name.str.split(' - ',expand=True,).astype(int)
     df = df.rename(columns = {'Total_'+Costs:'Time'})
     df["UH"], df["BH"], df[k_O], df[k_P+"_P"] = [111,111,0,0]
@@ -398,7 +400,8 @@ def potential():
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
-    "; Time_limits: "+str("/".join(Time_limits))+"; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
+    "; Time_limits: "+str("/".join(Time_limits))+";tofind: "+str(to_find)+\
+    "; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
     if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
