@@ -79,27 +79,27 @@ def distance():
             dataG = dsetP.copy()
             arcpy.AddMessage("> "+str(len(np.unique(dsetP[ID_P])))+" places")
         dataG.columns = [map(lambda a:a+"_P",dataG.columns)]
-        Iso_p = Iso_Slice(dsetA,dsetP,IsoChronen)
+        Iso_p = Iso_Slice(dsetO,dsetP,IsoChronen)
 
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
         gb = IsoP.groupby(fromStop)
         IsoP = IsoP.iloc[gb["Time"].idxmin()]
-        IsoA = pandas.merge(dsetA,IsoP,left_on=Node_O,right_on=fromStop)
-        IsoA["Time"] = IsoA[k_O]+IsoA["Time"]
+        IsoO = pandas.merge(dsetO,IsoP,left_on=Node_O,right_on=fromStop)
+        IsoO["Time"] = IsoO[k_O]+IsoO["Time"]
 
         if "NMT" in Modus:
             if Filter_Group_P:
                 Proxy = proximity[proximity[ID_P+"_P"].isin(dataG[ID_P+"_P"])]
-                IsoA = IsoA.append(Proxy, ignore_index = True)
-            else: IsoA = IsoA.append(proximity, ignore_index = True)
+                IsoO = IsoO.append(Proxy, ignore_index = True)
+            else: IsoO = IsoO.append(proximity, ignore_index = True)
 
-        gb = IsoA.groupby([ID_O,ID_P+"_P"])["Time"].idxmin()
-        IsoA = IsoA.iloc[gb].sort_values([ID_O,"Time"])
-        IsoA["tofind"] = IsoA.groupby([ID_O])['Time'].cumcount()+1
-        IsoA = IsoA.groupby(ID_O).head(to_find)
+        gb = IsoO.groupby([ID_O,ID_P+"_P"])["Time"].idxmin()
+        IsoO = IsoO.iloc[gb].sort_values([ID_O,"Time"])
+        IsoO["tofind"] = IsoO.groupby([ID_O])['Time'].cumcount()+1
+        IsoO = IsoO.groupby(ID_O).head(to_find)
 
-        Result = IsoA[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_O, k_P+"_P", "UH", "BH", "tofind"]]
+        Result = IsoO[["Start_ID","FromStop","Start_ID_P", "ToStop", "Time", k_O, k_P+"_P", "UH", "BH", "tofind"]]
         Result["Group"] = m
         Result.loc[Result["ToStop"]==Result["FromStop"],"UH"] = 111 ##same StopArea == dirct by foot
         Result.loc[Result["ToStop"]==Result["FromStop"],"BH"] = 111
@@ -121,11 +121,11 @@ def HDF5():
     return file5, group5, group5_Iso, group5_Results
 
 def HDF5_Inputs():
-    dsetA = group5[Table_O]
+    dsetO = group5[Table_O]
     if "Meter" == k_O:
-        dsetA = dsetA[dsetA[k_O]<int((kmh_O/3.6*60)*int(Time_limits[1]))]
-        dsetA[k_O] = dsetA[k_O]/(kmh_O/3.6*60) ##replace distance by time
-    else: dsetA = dsetA[dsetA[k_O]<int(Time_limits[1])]
+        dsetO = dsetO[dsetO[k_O]<int((kmh_O/3.6*60)*int(Time_limits[1]))]
+        dsetO[k_O] = dsetO[k_O]/(kmh_O/3.6*60) ##replace distance by time
+    else: dsetO = dsetO[dsetO[k_O]<int(Time_limits[1])]
 
     dsetP = group5[Table_P]
     if "Meter" == k_P:
@@ -134,17 +134,17 @@ def HDF5_Inputs():
     else: dsetP = dsetP[dsetP[k_P]<int(Time_limits[2])]
     if Filter_P: dsetP = dsetP[dsetP[Filter_P]>0]
 
-    dsetA = pandas.DataFrame(dsetA)
+    dsetO = pandas.DataFrame(dsetO)
     dsetP = pandas.DataFrame(dsetP)
-    if "Isochrones" in Modus: return dsetA, dsetP, ""
+    if "Isochrones" in Modus: return dsetO, dsetP, ""
     IsoChronen = group5_Iso[Isochrone_Name]
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
 
     if "Potential" in Modus:
         for i in StructData:
-            if i in dsetA.dtypes: dsetA.drop(i, axis=1, inplace=True)
+            if i in dsetO.dtypes: dsetO.drop(i, axis=1, inplace=True)
 
-    return dsetA, dsetP, IsoChronen
+    return dsetO, dsetP, IsoChronen
 
 def HDF5_Results():
     if "Potential" in Modus:
@@ -188,7 +188,7 @@ def Isochrones():
 
     #calculate Isochrones for places (distance measures) and orgins (gravity / contour measures).
     if "Distance" in Modus: From_StopArea = np.unique(dsetP[Node_P])
-    else: From_StopArea = np.unique(dsetA[Node_O])
+    else: From_StopArea = np.unique(dsetO[Node_O])
     arcpy.AddMessage("> calculate Isochrones for "+str(len(From_StopArea))+" StopAreas")
 
     VISUM_Isochrones = VISUM.Analysis.Isochrones
@@ -224,8 +224,8 @@ def Isochrones():
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
     return IsoChronen
 
-def Iso_Slice(dsetA,dsetP,Iso_I):
-    Orig_StopAreas = np.unique(dsetA[Node_O]) ##unique StopAreas at Origins
+def Iso_Slice(dsetO,dsetP,Iso_I):
+    Orig_StopAreas = np.unique(dsetO[Node_O]) ##unique StopAreas at Origins
     Place_StopAreas = np.unique(dsetP[Node_P]) ##unique StopAreas at Places
 
     if "Distance" in Modus: header = 20
@@ -311,15 +311,15 @@ def NMT():
 
 def potential():
     arcpy.AddMessage("> calculate potential measures")
-    Orig = np.unique(dsetA[ID_O])
+    Orig = np.unique(dsetO[ID_O])
     loop_from, loop_range = 0, 100
     loops = (len(Orig)/loop_range)+1
-    Iso = Iso_Slice(dsetA,dsetP,IsoChronen)
+    Iso = Iso_Slice(dsetO,dsetP,IsoChronen)
 
     for loop in range(loops):
         arcpy.AddMessage("> loop "+str(loop+1)+"/"+str(loops))
         dsetO_l = Orig[loop_from:loop_from+loop_range]
-        dsetO_l = dsetA[np.in1d(dsetA[ID_O],dsetO_l)]
+        dsetO_l = dsetO[np.in1d(dsetO[ID_O],dsetO_l)]
         loop_from+=loop_range
 
         dataiso = pandas.merge(dsetO_l,Iso,left_on=Node_O,right_on=fromStop)
@@ -409,7 +409,7 @@ def Text():
 #--preparation--#
 text = Text()
 file5, group5, group5_Iso, group5_Results = HDF5()
-dsetA, dsetP, IsoChronen = HDF5_Inputs()
+dsetO, dsetP, IsoChronen = HDF5_Inputs()
 if "NMT" in Modus: proximity = NMT()
 if "Isochrones" in Modus: IsoChronen = Isochrones()
 Results_T = HDF5_Results()
