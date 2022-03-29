@@ -30,14 +30,15 @@ A_Shape = arcpy.GetParameterAsText(5)
 P_Shape = arcpy.GetParameterAsText(6)
 Filter_P = arcpy.GetParameterAsText(7)
 Filter_Group_P = arcpy.GetParameterAsText(8)
-Network = arcpy.GetParameterAsText(9)
-Costs = arcpy.GetParameterAsText(10)
-Max_Costs = int(arcpy.GetParameterAsText(11))
-StructField = arcpy.GetParameterAsText(12).split(";")
-Measures = arcpy.GetParameterAsText(13).split(";")
-sumfak_t = arcpy.GetParameterAsText(14).split(";")
-sumfak_d = arcpy.GetParameterAsText(15).split(";")
-potfak = arcpy.GetParameterAsText(16).split(";")
+to_find = int(arcpy.GetParameterAsText(9))
+Network = arcpy.GetParameterAsText(10)
+Costs = arcpy.GetParameterAsText(11)
+Max_Costs = int(arcpy.GetParameterAsText(12))
+StructField = arcpy.GetParameterAsText(13).split(";")
+Measures = arcpy.GetParameterAsText(14).split(";")
+sumfak_t = arcpy.GetParameterAsText(15).split(";")
+sumfak_d = arcpy.GetParameterAsText(16).split(";")
+potfak = arcpy.GetParameterAsText(17).split(";")
 
 ID_A = "ID"
 ID_P = "ID"
@@ -45,7 +46,7 @@ Barriers = None
 if sumfak_d == ['']: sumfak_d = None
 if PrT == "Motorized": loops = 100
 else: loops = 1000
-
+if "Potential" in Modus: to_find = ""
 
 def checkfm(FC, FC_ID):
     if PrT == "Motorized": mode = "MIV"
@@ -83,15 +84,15 @@ def distance(group, groups):
 
     arcpy.na.Solve("ODMATRIX")
 
-    routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]))
+    routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]+["DestinationRank"]))
     routes[[ID_A,ID_P+"_P"]] = routes.Name.str.split(' - ',expand=True,).astype(int)
     routes.columns = [map(lambda a:a.replace("Total_",""),routes.columns)]
     routes.drop("Name", axis=1, inplace=True)
 
     if Filter_Group_P:
         routes[Filter_Group_P] = group
-        Result = routes[[ID_A,ID_P+"_P"]+cost_attr+[Filter_Group_P]]
-    else: Result = routes[[ID_A,ID_P+"_P"]+cost_attr]
+        Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]+[Filter_Group_P]]
+    else: Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]]
 
     Result = np.array(Result)
     oldsize = len(Results_T)
@@ -119,6 +120,7 @@ def HDF5_Results():
     if "Distance" in Modus:
         Fields = [('Orig_ID', 'int32'),('Place_ID','int32')]
         for i in cost_attr: Fields.append((i,'f8'))
+        Fields.append(('tofind','i2'))
         if Filter_Group_P: Fields.append(('Group','i2'))
 
     if Table_R in group5_Results.keys(): del group5_Results[Table_R]
@@ -132,10 +134,7 @@ def HDF5_Results():
 def ODLayer():
     arcpy.Delete_management("ODMATRIX")
 
-    if "Potential" in Modus: tofind = ""
-    else: tofind = 1
-
-    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,tofind,cost_attr,"","","","","NO_LINES")
+    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,to_find,cost_attr,"","","","","NO_LINES")
     p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
     Restriction_0 = list(p.restrictions) ##activate all restrictions
     p.restrictions = Restriction_0
@@ -212,7 +211,7 @@ def potential(origins,loop):
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str(PrT)+"; "+str(Modus)+"; Costs: "+str(Costs)+\
-    "; Max-Costs: "+str(Max_Costs)+"; Origins: "+str(A_Shape.split("\\")[-1])+"; Places: "+str(P_Shape.split("\\")[-1])
+    "; Max-Costs: "+str(Max_Costs)+";tofind: "+str(to_find)+"; Origins: "+str(A_Shape.split("\\")[-1])+"; Places: "+str(P_Shape.split("\\")[-1])
     if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if Filter_Group_P: text = text + "; Filter Group: "+str(Filter_Group_P)
     return text
