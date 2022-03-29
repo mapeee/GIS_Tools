@@ -57,7 +57,7 @@ P_Shape_ID = "ID"
 Barriers = "" ##Path to Shape
 fromStop = "FromStop"
 toStop = "ToStop"
-Nachlauf = 24
+PostRun = 24
 Day = ("1;1").split(";")
 
 
@@ -83,8 +83,15 @@ def distance():
 
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
-        gb = IsoP.groupby([ID_P+"_P",fromStop])
-        IsoP = IsoP.iloc[gb["Time"].idxmin()]
+
+        if to_find == 1:
+            gb = IsoP.groupby([fromStop])
+            IsoP = IsoP.iloc[gb["Time"].idxmin()]
+        else:
+            gb = IsoP.groupby([ID_P+"_P",fromStop])["Time"].idxmin()
+            IsoP = IsoP.iloc[gb].sort_values([fromStop,"Time"])
+            IsoP = IsoP.groupby(fromStop).head(to_find)
+
         IsoO = pandas.merge(dsetO,IsoP,left_on=Node_O,right_on=fromStop)
         IsoO["Time"] = IsoO[k_O]+IsoO["Time"]
 
@@ -196,7 +203,7 @@ def Isochrones():
         NE = VISUM.CreateNetElements()
         NE.Add(VISUM.Net.StopAreas.ItemByKey(int(Nr)))
         arcpy.AddMessage("> Isochrone "+str(n+1)+" of "+str(len(From_StopArea)))
-        VISUM_Isochrones.ExecutePuT(NE,"OV",str(Hours[0])+":00:00",str(Hours[1])+":00:00",int(Day[0]),int(Day[1]),Nachlauf*60*60,Zeitbezug) ##True == Arrival
+        VISUM_Isochrones.ExecutePuT(NE,"OV",str(Hours[0])+":00:00",str(Hours[1])+":00:00",int(Day[0]),int(Day[1]),PostRun*60*60,Zeitbezug) ##True == Arrival
 
         Ziel = np.array(VISUM.Net.StopAreas.GetMultiAttValues("No"))[:,1]
         Zeit = np.array(VISUM.Net.StopAreas.GetMultiAttValues("IsocTimePuT"))[:,1]/60
@@ -405,7 +412,7 @@ def Text():
     if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
-        text_v = text+"; Hours: "+str("/".join(Hours))+"; Nachlauf: "+str(Nachlauf)
+        text_v = text+"; Hours: "+str("/".join(Hours))+"; PostRun: "+str(PostRun)
         return text, text_v
     else: return text, ""
 
