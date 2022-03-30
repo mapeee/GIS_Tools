@@ -31,20 +31,18 @@ for i in dsetHDF5:
     b = pd.DataFrame(a)
     if len(b)<100000:
         path_xls = Path+"\\"+i+".xlsx"
-        col = 1
         b.to_excel(path_xls)
+        wb = opxl.load_workbook(path_xls)
+        sheet = wb.active
+        try:
+            sheet.cell(1,1,unicode(data.attrs.values()[0], errors='ignore'))
+            sheet.cell(1,1).font = Font(color = '00FF0000')
+        except: pass #if no attributes defined
+        wb.save(path_xls)
+        
     else:
         path_xls = Path+"\\"+i+".csv"
-        col = 2
         b.to_csv(path_xls)  
-
-    wb = opxl.load_workbook(path_xls)
-    sheet = wb.active
-    try:
-        sheet.cell(1,col,unicode(data.attrs.values()[0], errors='ignore'))
-        sheet.cell(1,col).font = Font(color = '00FF0000')
-    except: pass #if no attributes defined
-    wb.save(path_xls)
-
+        
 #--End--#
 file5.close()
