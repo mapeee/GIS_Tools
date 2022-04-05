@@ -235,7 +235,9 @@ def Iso_Slice(dsetO,dsetP,Iso_I):
     Orig_StopAreas = np.unique(dsetO[Node_O]) ##unique StopAreas at Origins
     Place_StopAreas = np.unique(dsetP[Node_P]) ##unique StopAreas at Places
 
-    if "Distance" in Modus: header = 20
+    if "Distance" in Modus:
+        if Filter_Group_P: header = 20 * len(np.unique(dsetP[Filter_Group_P])) * to_find
+        else: header = 20 * to_find
     else: header = 10000
     loop_from, loop_range = 0, 1000000
     loops = (len(Iso_I)/loop_range)+1 ## +1 due to rounding
