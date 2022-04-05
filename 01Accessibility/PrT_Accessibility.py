@@ -54,7 +54,7 @@ def checkfm(FC, FC_ID):
     for field in arcpy.Describe(FC).fields:
         if "SnapX" in field.name:
             fm = "Name "+FC_ID+" 0; SourceID SourceID_"+mode+" 0;SourceOID SourceOID_"+mode+" 0"\
-            ";PosAlong PosAlong_"+mode+" 0;SideOfEdge SideOfEdge_"+mode+" 0; Attr_Minutes # #"
+            ";PosAlong PosAlong_"+mode+" 0;SideOfEdge SideOfEdge_"+mode+" 0"
             return fm
 
 def costattr():
@@ -78,21 +78,33 @@ def distance(group, groups):
     if Filter_P: arcpy.SelectLayerByAttribute_management("P_Shape", "ADD_TO_SELECTION", Filter_P+">0")
 
     fm_P = checkfm("P_Shape",ID_P)
+    arcpy.na.AddFieldToAnalysisLayer("ODMATRIX", "Destinations","tto_park", "Integer")
     if fm_P is None:arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+ID_P+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
+    " 0; tto_park # 2","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+    else:
+        fm_P = fm_P+"; tto_park tZu 2"
+        arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
     arcpy.na.Solve("ODMATRIX")
 
-    routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]+["DestinationRank"]))
+    if PrT == "Motorized":
+        arcpy.management.JoinField("Lines", "OriginID","Origins", "ObjectID", "tfrom_park")
+        arcpy.management.JoinField("Lines", "DestinationID","Destinations", "ObjectID", "tto_park")
+        routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]+["DestinationRank","tfrom_park","tto_park"]))
+        routes["Total_"+Costs] = routes["Total_"+Costs]+routes["tfrom_park"]+routes["tto_park"]
+
+    else: routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]+["DestinationRank"]))
     routes[[ID_A,ID_P+"_P"]] = routes.Name.str.split(' - ',expand=True,).astype(int)
     routes.columns = [map(lambda a:a.replace("Total_",""),routes.columns)]
     routes.drop("Name", axis=1, inplace=True)
 
     if Filter_Group_P:
         routes[Filter_Group_P] = group
-        Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]+[Filter_Group_P]]
-    else: Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]]
+        if PrT == "Motorized": Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["tfrom_park","tto_park","DestinationRank"]+[Filter_Group_P]]
+        else: Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]+[Filter_Group_P]]
+    else:
+        if PrT == "Motorized": Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["tfrom_park","tto_park","DestinationRank"]]
+        else: Result = routes[[ID_A,ID_P+"_P"]+cost_attr+["DestinationRank"]]
 
     Result = np.array(Result)
     oldsize = len(Results_T)
@@ -120,6 +132,9 @@ def HDF5_Results():
     if "Distance" in Modus:
         Fields = [('Orig_ID', 'int32'),('Place_ID','int32')]
         for i in cost_attr: Fields.append((i,'f8'))
+        if PrT == "Motorized":
+            Fields.append(('tfrom_park','f8'))
+            Fields.append(('tto_park','f8'))
         Fields.append(('tofind','i2'))
         if Filter_Group_P: Fields.append(('Group','i2'))
 
@@ -142,9 +157,12 @@ def ODLayer():
 
     if "Distance" in Modus:
         fm_A = checkfm(A_Shape,ID_A)
+        arcpy.na.AddFieldToAnalysisLayer("ODMATRIX", "Origins","tfrom_park", "Integer")
         if fm_A is None: arcpy.AddLocations_na("ODMATRIX","Origins",A_Shape,"Name "+ID_A+\
-        " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-        else: arcpy.AddLocations_na("ODMATRIX","Origins",A_Shape,fm_A,"","","","","CLEAR","","","EXCLUDE")
+        " 0; tfrom_park # 1","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+        else:
+            fm_A = fm_A+"; tfrom_park tAb 1"
+            arcpy.AddLocations_na("ODMATRIX","Origins",A_Shape,fm_A,"","","","","CLEAR","","","EXCLUDE")
 
     if "Potential" in Modus:
         arcpy.Delete_management("P_Shape")
