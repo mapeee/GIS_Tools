@@ -37,7 +37,7 @@ to_find = int(arcpy.GetParameterAsText(15))
 Network_PT = arcpy.GetParameterAsText(16)
 Hours = arcpy.GetParameterAsText(17).split(";")
 Isochrone_Name = arcpy.GetParameterAsText(18)
-Smooth_PT = arcpy.GetParameterAsText(19)
+Smooth_PT = bool(arcpy.GetParameterAsText(19)=="true")
 StructData = arcpy.GetParameterAsText(20).split(";")
 Measures = arcpy.GetParameterAsText(21).split(";")
 sumfak = arcpy.GetParameterAsText(22).split(";")
@@ -111,8 +111,15 @@ def distance():
                 IsoO = IsoO.append(Proxy, ignore_index = True)
             else: IsoO = IsoO.append(proximity, ignore_index = True)
 
+        if Smooth_PT is True:
+            IsoO['minTime'] = IsoO.groupby([ID_O,ID_P+"_P"])['Time'].transform('min')
+            IsoO = IsoO[IsoO["Time"]-IsoO["minTime"]<5]
+            IsoO['BH'] = IsoO.groupby([ID_O,ID_P+"_P"])['BH'].transform('max')
+            IsoO['UH'] = IsoO.groupby([ID_O,ID_P+"_P"])['UH'].transform('min')
+            IsoO.drop('minTime', axis=1, inplace=True)
+
         gb = IsoO.groupby([ID_O,ID_P+"_P"])["Time"].idxmin()
-        IsoO = IsoO.iloc[gb].sort_values([ID_O,"Time"])
+        IsoO = IsoO.loc[gb].sort_values([ID_O,"Time"])
         IsoO["tofind"] = IsoO.groupby([ID_O])['Time'].cumcount()+1
         IsoO = IsoO.groupby(ID_O).head(to_find)
 
