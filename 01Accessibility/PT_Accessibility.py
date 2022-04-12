@@ -37,16 +37,17 @@ to_find = int(arcpy.GetParameterAsText(15))
 Network_PT = arcpy.GetParameterAsText(16)
 Hours = arcpy.GetParameterAsText(17).split(";")
 Isochrone_Name = arcpy.GetParameterAsText(18)
-StructData = arcpy.GetParameterAsText(19).split(";")
-Measures = arcpy.GetParameterAsText(20).split(";")
-sumfak = arcpy.GetParameterAsText(21).split(";")
-potfak = arcpy.GetParameterAsText(22).split(";")
-O_Shape = arcpy.GetParameterAsText(23)
-P_Shape = arcpy.GetParameterAsText(24)
-Network = arcpy.GetParameterAsText(25)
-Radius = int(arcpy.GetParameterAsText(26))
-Costs = arcpy.GetParameterAsText(27)
-Max_Costs = int(arcpy.GetParameterAsText(28))
+Smooth_PT = arcpy.GetParameterAsText(19)
+StructData = arcpy.GetParameterAsText(20).split(";")
+Measures = arcpy.GetParameterAsText(21).split(";")
+sumfak = arcpy.GetParameterAsText(22).split(";")
+potfak = arcpy.GetParameterAsText(23).split(";")
+O_Shape = arcpy.GetParameterAsText(24)
+P_Shape = arcpy.GetParameterAsText(25)
+Network = arcpy.GetParameterAsText(26)
+Radius = int(arcpy.GetParameterAsText(27))
+Costs = arcpy.GetParameterAsText(28)
+Max_Costs = int(arcpy.GetParameterAsText(29))
 
 Node_O = "Stop_NO"
 Node_P = "Stop_NO"
@@ -84,7 +85,7 @@ def distance():
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
 
-        if "Smooth_area" in Modus:
+        if Smooth_PT is True:
             if to_find == 1: groupstate = fromStop
             else: groupstate = [ID_P+"_P",fromStop]
             IsoP['minTime'] = IsoP.groupby(groupstate)['Time'].transform('min')
