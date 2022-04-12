@@ -420,7 +420,7 @@ def potential():
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
     "; Time_limits: "+str("/".join(Time_limits))+";tofind: "+str(to_find)+\
-    "; IsoName: "+str(Isochrone_Name)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
+    "; IsoName: "+str(Isochrone_Name)+"; Smooth PT: "+str(Smooth_PT)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
     if "Potential" in Modus: text = text + "; Measures: "+str("/".join(Measures))
     if "NMT" in Modus: text = text + "; NMT-Radius: "+str(Radius)+"; NMT-Costs: "+str(Max_Costs)
     if "Isochrones" in Modus:
