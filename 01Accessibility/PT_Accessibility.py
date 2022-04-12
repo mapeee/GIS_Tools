@@ -84,12 +84,21 @@ def distance():
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
 
+        if "Smooth_area" in Modus:
+            if to_find == 1: groupstate = fromStop
+            else: groupstate = [ID_P+"_P",fromStop]
+            IsoP['minTime'] = IsoP.groupby(groupstate)['Time'].transform('min')
+            IsoP = IsoP[IsoP["Time"]-IsoP["minTime"]<5]
+            IsoP['BH'] = IsoP.groupby(groupstate)['BH'].transform('max')
+            IsoP['UH'] = IsoP.groupby(groupstate)['UH'].transform('min')
+            IsoP.drop('minTime', axis=1, inplace=True)
+
         if to_find == 1:
             gb = IsoP.groupby([fromStop])
-            IsoP = IsoP.iloc[gb["Time"].idxmin()]
+            IsoP = IsoP.loc[gb["Time"].idxmin()]
         else:
             gb = IsoP.groupby([ID_P+"_P",fromStop])["Time"].idxmin()
-            IsoP = IsoP.iloc[gb].sort_values([fromStop,"Time"])
+            IsoP = IsoP.loc[gb].sort_values([fromStop,"Time"])
             IsoP = IsoP.groupby(fromStop).head(to_find)
 
         IsoO = pandas.merge(dsetO,IsoP,left_on=Node_O,right_on=fromStop)
