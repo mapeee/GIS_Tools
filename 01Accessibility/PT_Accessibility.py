@@ -80,7 +80,7 @@ def distance():
             dataG = dsetP.copy()
             arcpy.AddMessage("> "+str(len(np.unique(dsetP[ID_P])))+" places")
         dataG.columns = [map(lambda a:a+"_P",dataG.columns)]
-        Iso_p = Iso_Slice(dsetO,dsetP,IsoChronen)
+        Iso_p = iso_slice(dsetO,dsetP,IsoChronen)
 
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
         IsoP["Time"] = IsoP[k_P+"_P"]+IsoP["Time"]
@@ -185,7 +185,7 @@ def HDF5_Results():
 
     return Results_T
 
-def Isochrones():
+def isochrones():
     arcpy.AddMessage("> calculate VISUM Isochrones")
 
     if "Distance" in Modus: Zeitbezug = True
@@ -239,7 +239,7 @@ def Isochrones():
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
     return IsoChronen
 
-def Iso_Slice(dsetO,dsetP,Iso_I):
+def iso_slice(dsetO,dsetP,Iso_I):
     Orig_StopAreas = np.unique(dsetO[Node_O]) ##unique StopAreas at Origins
     Place_StopAreas = np.unique(dsetP[Node_P]) ##unique StopAreas at Places
 
@@ -333,7 +333,7 @@ def potential():
     Orig = np.unique(dsetO[ID_O])
     loop_from, loop_range = 0, 100
     loops = (len(Orig)/loop_range)+1
-    Iso = Iso_Slice(dsetO,dsetP,IsoChronen)
+    Iso = iso_slice(dsetO,dsetP,IsoChronen)
 
     for loop in range(loops):
         arcpy.AddMessage("> loop "+str(loop+1)+"/"+str(loops))
@@ -429,7 +429,7 @@ def smooth_pt(data,group_state):
     data.drop('minTime', axis=1, inplace=True)
     return data
 
-def Text():
+def text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
     "; Time_limits: "+str("/".join(Time_limits))+";tofind: "+str(to_find)+\
     "; IsoName: "+str(Isochrone_Name)+"; Smooth PT: "+str(Smooth_PT)+"; Origins: "+str(Table_O)+"; Places: "+str(Table_P)
@@ -441,11 +441,11 @@ def Text():
     else: return text, ""
 
 #--preparation--#
-text = Text()
+text = text()
 file5, group5, group5_Iso, group5_Results = HDF5()
 dsetO, dsetP, IsoChronen = HDF5_Inputs()
 if "NMT" in Modus: proximity = NMT()
-if "Isochrones" in Modus: IsoChronen = Isochrones()
+if "Isochrones" in Modus: IsoChronen = isochrones()
 Results_T = HDF5_Results()
 
 #--measures--#
