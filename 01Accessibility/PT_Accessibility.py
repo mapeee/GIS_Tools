@@ -88,11 +88,7 @@ def distance():
         if Smooth_PT is True:
             if to_find == 1: groupstate = fromStop
             else: groupstate = [ID_P+"_P",fromStop]
-            IsoP['minTime'] = IsoP.groupby(groupstate)['Time'].transform('min')
-            IsoP = IsoP[IsoP["Time"]-IsoP["minTime"]<5]
-            IsoP['BH'] = IsoP.groupby(groupstate)['BH'].transform('max')
-            IsoP['UH'] = IsoP.groupby(groupstate)['UH'].transform('min')
-            IsoP.drop('minTime', axis=1, inplace=True)
+            IsoP = smooth_pt(IsoP,groupstate)
 
         if to_find == 1:
             gb = IsoP.groupby([fromStop])
@@ -111,12 +107,7 @@ def distance():
                 IsoO = IsoO.append(Proxy, ignore_index = True)
             else: IsoO = IsoO.append(proximity, ignore_index = True)
 
-        if Smooth_PT is True:
-            IsoO['minTime'] = IsoO.groupby([ID_O,ID_P+"_P"])['Time'].transform('min')
-            IsoO = IsoO[IsoO["Time"]-IsoO["minTime"]<5]
-            IsoO['BH'] = IsoO.groupby([ID_O,ID_P+"_P"])['BH'].transform('max')
-            IsoO['UH'] = IsoO.groupby([ID_O,ID_P+"_P"])['UH'].transform('min')
-            IsoO.drop('minTime', axis=1, inplace=True)
+        if Smooth_PT is True: IsoO = smooth_pt(IsoO,[ID_O,ID_P+"_P"])
 
         gb = IsoO.groupby([ID_O,ID_P+"_P"])["Time"].idxmin()
         IsoO = IsoO.loc[gb].sort_values([ID_O,"Time"])
@@ -356,6 +347,9 @@ def potential():
 
         try:
             dataiso = dataiso.sort_values([ID_O,toStop,"Time"])
+
+            if Smooth_PT is True: dataiso = smooth_pt(dataiso,[ID_O,toStop])
+
             dataiso = dataiso.groupby([ID_O,toStop]).first().reset_index()
             dataiso = pandas.merge(dataiso,dsetP,left_on=toStop,right_on=Node_P)
             dataiso.loc[:,"Time"] = dataiso.loc[:,k_P+"_y"]+dataiso.loc[:,"Time"]
@@ -367,6 +361,9 @@ def potential():
 
             dataiso = dataiso[dataiso["Time"]<=(int(Time_limits[0]))].reset_index(drop=True)
             dataiso = dataiso.sort_values([ID_O+"_x",ID_P+"_y","Time"])
+
+            if Smooth_PT is True: dataiso = smooth_pt(dataiso,[ID_O+"_x",ID_P+"_y"])
+
             dataiso = dataiso.groupby([ID_O+"_x",ID_P+"_y"]).first().reset_index()
 
         except:
@@ -423,6 +420,14 @@ def potential():
             file5.flush()
         del dataiso
         gc.collect()
+
+def smooth_pt(data,group_state):
+    data['minTime'] = data.groupby(group_state)['Time'].transform('min')
+    data = data[data["Time"]-data["minTime"]<5]
+    data['BH'] = data.groupby(group_state)['BH'].transform('max')
+    data['UH'] = data.groupby(group_state)['UH'].transform('min')
+    data.drop('minTime', axis=1, inplace=True)
+    return data
 
 def Text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
