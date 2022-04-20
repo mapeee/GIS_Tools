@@ -1,4 +1,3 @@
 x = np.array(np.rec.fromrecords(dataiso.values))
-names = dataiso.dtypes.index.tolist()
-x.dtype.names = tuple(names)
-arcpy.da.NumPyArrayToTable(x, r'C:\???\Material.gdb\dataiso3')
+x.dtype.names = tuple(dataiso.dtypes.index.tolist())
+arcpy.da.NumPyArrayToTable(x, r'C:\???')
