@@ -153,7 +153,16 @@ def HDF5_Inputs():
     dsetP = pandas.DataFrame(dsetP)
     if "Isochrones" in Modus: return dsetO, dsetP, ""
     IsoChronen = group5_Iso[Isochrone_Name]
-    IsoChronen = pandas.DataFrame(np.array(IsoChronen))
+    if "Scenario" in IsoChronen.attrs.keys():
+        arcpy.AddMessage("> calculate scenario\n")
+        Iso_O = pandas.DataFrame(np.array(group5_Iso[IsoChronen.attrs["Scenario"]]))
+        Iso_S = pandas.DataFrame(np.array(IsoChronen))
+        Iso = Iso_O.merge(Iso_S[["FromStop","ToStop","Time"]],how="left",on=["FromStop","ToStop"])
+        Iso = Iso[Iso['Time_y'].isnull()]
+        Iso.drop(["Time_y"], axis=1, inplace=True)
+        Iso.rename(columns={"Time_x": "Time"},inplace=True)
+        IsoChronen = Iso_S.append(Iso)
+    else: IsoChronen = pandas.DataFrame(np.array(IsoChronen))
 
     if "Potential" in Modus:
         for i in StructData:
