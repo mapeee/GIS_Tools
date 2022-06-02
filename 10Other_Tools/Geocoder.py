@@ -28,9 +28,9 @@ here_key = f[3]
 geocoder_osm = OpenCageGeocode(osm_key)
 
 #--values--#
-Street = 1
-ZIP = 2
-City = 3
+Street = 2
+ZIP = 3
+City = 4
 
 #--open excel--#
 excelfile = f[0]
