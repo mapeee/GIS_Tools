@@ -32,6 +32,9 @@ def calc_locations(locations, network,search_tolerance,search_criteria,ND):
         if i in search_criteria: search_crit.append([i,"Shape"])
         else: search_crit.append([i,"NONE"])
 
+    try: arcpy.DeleteField_management(locations, ["SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,"SnapY_"+ND,"Distance_"+ND])
+    except: pass
+
     arcpy.na.CalculateLocations(locations, network, search_tolerance,search_crit,
                     "MATCH_TO_CLOSEST","SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,"SnapY_"+ND,"Distance_"+ND)
 
@@ -50,6 +53,7 @@ if "ID" in field_names:
 
 else:
     arcpy.AddMessage("> adding 'ID' Field")
+    arcpy.DeleteField_management(places,"id")
     arcpy.AddField_management(places,"ID","LONG")
     n = 1
     with arcpy.da.UpdateCursor(places, ["ID"]) as cursor:
