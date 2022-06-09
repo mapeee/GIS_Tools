@@ -85,9 +85,9 @@ def isochrones(V,JRT,NTR,SFQ,Iso):
 def matrices(VISUM):
     for Matrix in VISUM.Net.Matrices:
         if Matrix.AttValue("ObjectTypeRef") == 'OBJECTTYPEREF_STOPAREA':
-            if Matrix.AttValue("Code") == "JRT": JRT = int(Matrix.AttValue("No")) ##Traveltime
-            if Matrix.AttValue("Code") == "NTR": NTR = int(Matrix.AttValue("No")) ##Transfers
-            if Matrix.AttValue("Code") == "SFQ": SFQ = int(Matrix.AttValue("No")) ##Service frequency
+            if Matrix.AttValue("Code") == "JRT" and "_Tag" in Matrix.AttValue("Name"): JRT = int(Matrix.AttValue("No")) ##Traveltime
+            if Matrix.AttValue("Code") == "NTR" and "_Tag" in Matrix.AttValue("Name"): NTR = int(Matrix.AttValue("No")) ##Transfers
+            if Matrix.AttValue("Code") == "SFQ" and "_Tag" in Matrix.AttValue("Name"): SFQ = int(Matrix.AttValue("No")) ##Service frequency
     return JRT, NTR, SFQ
 
 def round_half_up(n, decimals=0):
