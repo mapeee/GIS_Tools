@@ -112,7 +112,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
     arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
 
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
     arcpy.AddMessage("> "+mod[0]+"stops added \n")
     if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
@@ -120,7 +120,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
 def ODRouting(FC,FC_ID,OID,row,fieldmap):
     arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","CLEAR","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","CLEAR","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
     try: arcpy.Solve_na("ODLayer","SKIP","CONTINUE") ##SKIP:Not Located is skipped
     except:
@@ -141,7 +141,7 @@ results = [] ##to fill into HDF5 table
 for mod in Modus:
     ODLayer(mod, Ziel, Ziel_ID, Desti_fm[1])
     for place in range(0,Places,5000):
-        arcpy.AddMessage("> placaes from "+str(place)+" to "+str(place+5000))
+        arcpy.AddMessage("> places from "+str(place)+" to "+str(place+5000))
         arcpy.AddMessage("> mod: "+mod[0])
         ODRouting(Start, Start_ID, Orig_fm[0], place, Orig_fm[1])
         results = results + ExportRoutes(mod)

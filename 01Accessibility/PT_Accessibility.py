@@ -304,11 +304,11 @@ def NMT():
     if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","O_Shape",Radius)
 
     if fm_O is None:arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape","Name "+O_Shape_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape",fm_O,"","","","","CLEAR","","","EXCLUDE")
 
     if fm_P is None: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
     arcpy.na.Solve("ODMATRIX","","CONTINUE")
