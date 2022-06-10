@@ -88,6 +88,7 @@ def distance(group, groups):
     arcpy.na.Solve("ODMATRIX")
 
     if PrT == "Motorized":
+        arcpy.DeleteField_management("Lines",["tfrom_park","tto_park"])
         arcpy.management.JoinField("Lines", "OriginID","Origins", "ObjectID", "tfrom_park")
         arcpy.management.JoinField("Lines", "DestinationID","Destinations", "ObjectID", "tto_park")
         routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]+["DestinationRank","tfrom_park","tto_park"]))
