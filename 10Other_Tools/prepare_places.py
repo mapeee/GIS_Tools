@@ -13,12 +13,13 @@ start_time = time.time()
 
 #--ArcGIS Parameter--#
 places = arcpy.GetParameterAsText(0)
-car_network = arcpy.GetParameterAsText(1)
-search_tolerance_car = arcpy.GetParameterAsText(2)+" Meters"
-search_criteria_car = arcpy.GetParameterAsText(3).split(";")
-NMT_network = arcpy.GetParameterAsText(4)
-search_tolerance_NMT = arcpy.GetParameterAsText(5)+" Meters"
-search_criteria_NMT = arcpy.GetParameterAsText(6).split(";")
+ID_corr = bool(arcpy.GetParameterAsText(1)=="true")
+car_network = arcpy.GetParameterAsText(2)
+search_tolerance_car = arcpy.GetParameterAsText(3)+" Meters"
+search_criteria_car = arcpy.GetParameterAsText(4).split(";")
+NMT_network = arcpy.GetParameterAsText(5)
+search_tolerance_NMT = arcpy.GetParameterAsText(6)+" Meters"
+search_criteria_NMT = arcpy.GetParameterAsText(7).split(";")
 
 arcpy.AddMessage("> starting\n")
 
@@ -39,28 +40,30 @@ def calc_locations(locations, network,search_tolerance,search_criteria,ND):
                     "MATCH_TO_CLOSEST","SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,"SnapY_"+ND,"Distance_"+ND)
 
 #--ID Field--#
-field_names = [f.name for f in arcpy.ListFields(places)]
-if "ID" in field_names:
-    arcpy.AddMessage("> 'ID' Field still existing")
-    values = [row[0] for row in arcpy.da.SearchCursor(places, ["ID"])]
-    if 0 in values:arcpy.AddMessage("> 'ID' Field including '0' value!")
-    if None in values: arcpy.AddMessage("> 'ID' Field including 'None' value!")
+if ID_corr == True:
+    arcpy.AddMessage("> correcting 'ID' Field")
+    field_names = [f.name for f in arcpy.ListFields(places)]
+    if "ID" in field_names:
+        arcpy.AddMessage("> 'ID' Field still existing")
+        values = [row[0] for row in arcpy.da.SearchCursor(places, ["ID"])]
+        if 0 in values:arcpy.AddMessage("> 'ID' Field including '0' value!")
+        if None in values: arcpy.AddMessage("> 'ID' Field including 'None' value!")
 
-    duplicates = [item for item, count in collections.Counter(values).items() if count > 1]
-    if len(duplicates) > 0: arcpy.AddMessage("> duplicate values: "+str(duplicates))
+        duplicates = [item for item, count in collections.Counter(values).items() if count > 1]
+        if len(duplicates) > 0: arcpy.AddMessage("> duplicate values: "+str(duplicates))
 
-    arcpy.AddMessage("\n")
+        arcpy.AddMessage("\n")
 
-else:
-    arcpy.AddMessage("> adding 'ID' Field")
-    arcpy.DeleteField_management(places,"id")
-    arcpy.AddField_management(places,"ID","LONG")
-    n = 1
-    with arcpy.da.UpdateCursor(places, ["ID"]) as cursor:
-        for row in cursor:
-            row[0] = n
-            n+=1
-            cursor.updateRow(row)
+    else:
+        arcpy.AddMessage("> adding 'ID' Field")
+        arcpy.DeleteField_management(places,"id")
+        arcpy.AddField_management(places,"ID","LONG")
+        n = 1
+        with arcpy.da.UpdateCursor(places, ["ID"]) as cursor:
+            for row in cursor:
+                row[0] = n
+                n+=1
+                cursor.updateRow(row)
 
 #--calculate locations--#
 if car_network: calc_locations(places, car_network,search_tolerance_car,search_criteria_car,"MIV")
