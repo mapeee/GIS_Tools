@@ -77,6 +77,8 @@ def exl_writer(results, row):
 #--geocoding--#
 for row in range(2,wks.max_row+1):##to prevent 0 and no header
 
+    if wks.cell(row,Street).value == None: break
+
     query = wks.cell(row,Street).value+", "+str(wks.cell(row,ZIP).value)+" "+wks.cell(row,City).value
     #bing
     result = bing(query)
