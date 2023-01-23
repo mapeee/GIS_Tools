@@ -2,7 +2,7 @@
 # -*- coding: cp1252 -*-
 #-------------------------------------------------------------------------------
 # Name: Matrices_to_Isochrones
-# Purpose: Transformation and export of PTV VIsum SkimMatrices to HDF5-Dataframe
+# Purpose: Transformation and export of PTV VISUM SkimMatrices to HDF5-Dataframe
 # Author:      mape
 # Created:     19/01/2016 (new Version November 2021)
 # Copyright:   (c) mape 2016
