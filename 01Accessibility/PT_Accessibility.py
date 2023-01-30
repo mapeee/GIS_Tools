@@ -79,7 +79,7 @@ def distance():
         else:
             dataG = dsetP.copy()
             arcpy.AddMessage("> "+str(len(np.unique(dsetP[ID_P])))+" places")
-        dataG.columns = [map(lambda a:a+"_P",dataG.columns)]
+        for a in dataG.columns: dataG.rename(columns={a: a+"_P"},inplace=True)
         Iso_p = iso_slice(dsetO,dsetP,IsoChronen)
 
         IsoP = pandas.merge(dataG,Iso_p,left_on=Node_P+"_P",right_on=toStop)
