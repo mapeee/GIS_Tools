@@ -175,7 +175,6 @@ def ODLayer():
         else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
 
 def potential(origins,loop):
-    global n, Column
     global Result, Column, e, routes, ID_A
     arcpy.AddMessage("> origins from "+str(origins)+" to "+str(origins+loop)+" from "+str(Origins))
     arcpy.Delete_management("A_Shape")
@@ -191,7 +190,7 @@ def potential(origins,loop):
     arcpy.na.Solve("ODMATRIX")
     routes = pandas.DataFrame(arcpy.da.FeatureClassToNumPyArray("ODMATRIX\Lines",["Name"]+["Total_"+x for x in cost_attr]))
     routes[[ID_A,ID_P+"_P"]] = routes.Name.str.split(' - ',expand=True,).astype(int)
-    routes.columns = [map(lambda a:a.replace("Total_",""),routes.columns)]
+    for a in routes.columns: routes.rename(columns={a: a.replace("Total_","")},inplace=True)
     routes.drop("Name", axis=1, inplace=True)
 
     StructData = pandas.DataFrame(dataP[[ID_P]+StructField])
