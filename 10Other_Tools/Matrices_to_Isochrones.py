@@ -30,7 +30,6 @@ calculate = bool(arcpy.GetParameterAsText(8)=="true")
 cal_scenario = bool(arcpy.GetParameterAsText(9)=="true")
 I_zero_case = arcpy.GetParameterAsText(10)
 
-
 def HDF5(Data):
     result_array = []
     Columns = np.dtype([('FromStop', 'i4'),('ToStop', 'i4'),('Time', 'i4'),('UH', 'i2'),('BH', 'i2')])
