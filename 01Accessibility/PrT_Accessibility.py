@@ -70,7 +70,7 @@ def distance(group, groups):
     arcpy.Delete_management("P_Shape")
     if Filter_Group_P:
         arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape",Filter_Group_P+"= "+str(group))
-        arcpy.AddMessage("> group "+str(group)+"/"+str(len(groups))+" with "+str(len(dataP[dataP[Filter_Group_P]==group]))+" places")
+        arcpy.AddMessage("> group "+str(group+1)+"/"+str(len(groups))+" with "+str(len(dataP[dataP[Filter_Group_P]==group]))+" places")
     else:
         arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape")
         arcpy.AddMessage("> distances to next place out of "+str(len(dataP))+" places")
