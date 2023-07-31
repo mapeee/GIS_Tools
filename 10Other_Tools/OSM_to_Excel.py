@@ -45,22 +45,28 @@ def result_api(osm_IDs):
     result = overpy.Overpass().query(query_api)
     return result
 
-def write_XLSX(XLSX, osm_IDs, results):
-    XLSX.cell(1,1).font = Font(bold = True)
+def write_XLSX(XLSX, osm_IDs, fromrow, results):
+    global osmID
+    
     tags = ["highway", "surface"]
-    for i, tag in enumerate(tags):
-        XLSX.cell(1,i+2).value = tag
-        XLSX.cell(1,i+2).font = Font(bold = True)
+    if fromrow==0:
+        XLSX.cell(1,1).font = Font(bold = True)
+        for i, tag in enumerate(tags):
+            XLSX.cell(1,i+2).value = tag
+            XLSX.cell(1,i+2).font = Font(bold = True)
     
     for i, osmID in enumerate(osm_IDs):
         for e, tag in enumerate(tags):
-            XLSX.cell(i+2,e+2).value = result.get_way(osmID).tags.get(tag, "n/a")
+            try: XLSX.cell(i+2+fromrow,e+2).value = result.get_way(osmID).tags.get(tag, "n/a")
+            except: XLSX.cell(i+2+fromrow,e+2).value = "osm_id missing"
 
 #--Parameter--#
 XLSX = Excel(XLSX_path)
 osm_IDs = List_osm_id(XLSX)
-result = result_api(osm_IDs)
-write_XLSX(XLSX, osm_IDs, result)
+for i in range(int(len(osm_IDs)/5000)+1):
+    row = [i*5000, (i+1)*5000]
+    result = result_api(osm_IDs[row[0]:row[1]])
+    write_XLSX(XLSX, osm_IDs[row[0]:row[1]], row[0], result)
 
 wb.save(XLSX_path)
 
