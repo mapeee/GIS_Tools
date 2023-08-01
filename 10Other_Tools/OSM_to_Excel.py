@@ -57,7 +57,7 @@ def write_XLSX(XLSX, osm_IDs, fromrow, results):
     
     for i, osmID in enumerate(osm_IDs):
         for e, tag in enumerate(tags):
-            try: XLSX.cell(i+2+fromrow,e+2).value = result.get_way(osmID).tags.get(tag, "n/a")
+            try: XLSX.cell(i+2+fromrow,e+2).value = results.get_way(osmID).tags.get(tag, "n/a")
             except: XLSX.cell(i+2+fromrow,e+2).value = "osm_id missing"
 
 #--Parameter--#
