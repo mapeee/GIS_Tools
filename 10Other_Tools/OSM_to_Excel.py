@@ -65,8 +65,8 @@ XLSX = Excel(XLSX_path)
 osm_IDs = List_osm_id(XLSX)
 for i in range(int(len(osm_IDs)/5000)+1):
     row = [i*5000, (i+1)*5000]
-    result = result_api(osm_IDs[row[0]:row[1]])
-    write_XLSX(XLSX, osm_IDs[row[0]:row[1]], row[0], result)
+    osm_data = result_api(osm_IDs[row[0]:row[1]])
+    write_XLSX(XLSX, osm_IDs[row[0]:row[1]], row[0], osm_data)
 
 wb.save(XLSX_path)
 
