@@ -54,7 +54,7 @@ def List_osm_id(FC, osmID):
     List = [int(i[0]) for i in arcpy.da.FeatureClassToNumPyArray(FC, (osmID))]
     return List
 
-def result_api(osmType, osmIDs):
+def overpass_api(osmType, osmIDs):
     osmIDs = [str(x) for x in osmIDs]
     string_osm_IDs = ', '.join(osmIDs)
     query_api = osmType+"(id:"+string_osm_IDs+"); (._;>;); out body;"
@@ -79,7 +79,8 @@ osm_tags = add_tags(geodata,osm_tags)
 osm_IDs = List_osm_id(geodata, osm_id_field)
 
 for i in range(int(len(osm_IDs)/5000)+1):
+    arcpy.AddMessage("> Bunch "+str(i+1)+" / "+str(int(len(osm_IDs)/5000)+1)+1)
     FC_rows = [i*5000, (i+1)*5000]
-    osm_data = result_api(osm_type, osm_IDs[FC_rows[0]:FC_rows[1]])
+    osm_data = overpass_api(osm_type, osm_IDs[FC_rows[0]:FC_rows[1]])
     write_data(geodata, osm_id_field, osm_tags, osm_type, FC_rows)
     
