@@ -38,7 +38,7 @@ def List_osm_id(XLSX):
         List.append(osm_id)
     return List
 
-def result_api(osm_IDs):
+def overpass_api(osm_IDs):
     osm_IDs = [str(x) for x in osm_IDs]
     string_osm_IDs = ', '.join(osm_IDs)
     query_api = "way(id:"+string_osm_IDs+"); (._;>;); out body;"
@@ -65,7 +65,7 @@ XLSX = Excel(XLSX_path)
 osm_IDs = List_osm_id(XLSX)
 for i in range(int(len(osm_IDs)/5000)+1):
     row = [i*5000, (i+1)*5000]
-    osm_data = result_api(osm_IDs[row[0]:row[1]])
+    osm_data = overpass_api(osm_IDs[row[0]:row[1]])
     write_XLSX(XLSX, osm_IDs[row[0]:row[1]], row[0], osm_data)
 
 wb.save(XLSX_path)
