@@ -22,9 +22,10 @@ osm_tags = arcpy.GetParameterAsText(3).split(";")
 def add_tags(FC, osmTags):
     tags_list = [["access","access","TEXT"],
             ["area","area","TEXT"],
-            ["bicycle","RAD","TEXT"],
+            ["bicycle","Bike_osm","TEXT"],
             ["cycleway:left","bike_l","TEXT"],
             ["cycleway:right","bike_r","TEXT"],
+            ["foot","Walk_osm","TEXT"],
             ["highway","highway","TEXT"],
             ["service","service","TEXT"],
             ["sidewalk:left","walk_l","TEXT"],
@@ -79,7 +80,7 @@ osm_tags = add_tags(geodata,osm_tags)
 osm_IDs = List_osm_id(geodata, osm_id_field)
 
 for i in range(int(len(osm_IDs)/5000)+1):
-    arcpy.AddMessage("> Bunch "+str(i+1)+" / "+str(int(len(osm_IDs)/5000)+1)+1)
+    arcpy.AddMessage("> Bunch "+str(i+1)+" / "+str(int(len(osm_IDs)/5000)+1))
     FC_rows = [i*5000, (i+1)*5000]
     osm_data = overpass_api(osm_type, osm_IDs[FC_rows[0]:FC_rows[1]])
     write_data(geodata, osm_id_field, osm_tags, osm_type, FC_rows)
