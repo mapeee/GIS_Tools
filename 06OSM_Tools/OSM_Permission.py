@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: cp1252 -*-
 #-------------------------------------------------------------------------------
-# Name: OSM Permission
-# Purpose: Permission (non)motorized transport on networks
+# Name:        OSM Permission
+# Purpose:     Permission (non)motorized transport on networks
 # Author:      mape
 # Created:     04/08/2023
 # Copyright:   (c) mape 2023
@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 
 import arcpy
-import overpy
 import sys
 
 #--ArcGIS Parameter--#
@@ -40,23 +39,28 @@ def permission(data, tags):
     bike = 1
     walk = 1
     #--both--#
-    if data[tags["access"]] in ["private","customers","no","permissive"]:
+    if data[tags["access"]] in ["private","customers","no","permit","private;customers"]:
         bike = 0
         walk = 0
-    if data[tags["highway"]] in ["motorway"]:
+    if data[tags["highway"]] in ["motorway","motorway_link","busway","construction","trunk","trunk_link"]:
         bike = 0
         walk = 0
     if data[tags["service"]] in ["parking_aisle"]:
         bike = 0
         walk = 0
     #--bike--#
-    if data[tags["highway"]] in ["steps"]:
-        bike = 0
     if data[tags["bike_osm"]] == "no":
         bike = 0
+    if data[tags["bike_osm"]] == "yes":
+        bike = 1
     #--walk--#
     if data[tags["walk_osm"]] == "no":
         walk = 0
+    if data[tags["walk_osm"]] == "yes":
+        walk = 1
+    #--bike and walk--#
+    if walk == 1:
+        bike = 1
 
     data[tags["Bike"]] = bike
     data[tags["Walk"]] = walk
