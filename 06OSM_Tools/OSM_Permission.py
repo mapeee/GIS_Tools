@@ -16,6 +16,7 @@ import sys
 geodata = arcpy.GetParameterAsText(0)
 osm_id_field = arcpy.GetParameterAsText(1)
 osm_type = arcpy.GetParameterAsText(2)
+walkbike_man = bool(arcpy.GetParameterAsText(3)=="true")
 
 def field_test(FC, tags):
     missing = []
@@ -30,16 +31,19 @@ def field_test(FC, tags):
         arcpy.AddMessage("> All tags existing")
 
 def osm_dict(id_field):
-    tags = [id_field,"Bike","Walk",
+    tags = [id_field,"Bike","Walk","Bike_man","Walk_man",
                 "access","highway","bike_osm","walk_osm","service"]
     tags = dict(zip(tags, [*range(0, len(tags))]))
     return tags
     
-def permission(data, tags):
+def permission(data, tags, manual):
     bike = 1
     walk = 1
     #--both--#
-    if data[tags["access"]] in ["private","customers","no","permit","private;customers"]:
+    if data[tags["access"]] in ["private","no","permit","private;customers"]:
+        bike = 0
+        walk = 0
+    if data[tags["access"]] == "customers" and data[tags["highway"]] == "service": ##without service == PT-Stops closed
         bike = 0
         walk = 0
     if data[tags["highway"]] in ["motorway","motorway_link","busway","construction","trunk","trunk_link"]:
@@ -61,6 +65,12 @@ def permission(data, tags):
     #--bike and walk--#
     if walk == 1:
         bike = 1
+    
+    if manual == True:
+        if data[tags["Walk_man"]] != 9:
+            walk = data[tags["Walk_man"]]
+        if data[tags["Bike_man"]] != 9:
+            bike = data[tags["Bike_man"]]
 
     data[tags["Bike"]] = bike
     data[tags["Walk"]] = walk
@@ -70,5 +80,5 @@ osm_tags = osm_dict(osm_id_field)
 field_test(geodata,osm_tags)
 with arcpy.da.UpdateCursor(geodata, list(osm_tags.keys())) as cursor:
     for row in cursor:
-        permission(row,osm_tags)
+        permission(row,osm_tags,walkbike_man)
         cursor.updateRow(row)
