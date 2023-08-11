@@ -25,11 +25,13 @@ def add_tags(FC, osmTags):
             ["bicycle","Bike_osm","TEXT"],
             ["cycleway:left","bike_l","TEXT"],
             ["cycleway:right","bike_r","TEXT"],
+            ["cycleway","cycleway","TEXT"],
             ["foot","Walk_osm","TEXT"],
             ["highway","highway","TEXT"],
             ["service","service","TEXT"],
             ["sidewalk:left","walk_l","TEXT"],
             ["sidewalk:right","walk_r","TEXT"],
+            ["sidewalk", "sidewalk", "TEXT"],
             ["smoothness","smoothness","TEXT"],
             ["surface","surface","TEXT"],
             ["step_count","step_count","TEXT"]]
