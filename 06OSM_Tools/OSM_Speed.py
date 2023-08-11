@@ -31,26 +31,48 @@ def field_test(FC, tags):
 
 def osm_dict(id_field):
     tags = [id_field,"vBike_FT","tBike_FT","vWalk_FT","tWalk_FT","vBike_TF","tBike_TF","vWalk_TF","tWalk_TF","Meter",
-                "access","highway","bike_osm","walk_osm","service","step_count"]
+                "highway","bicycle","foot","step_count","cycleway", "sidewalk", "bike_l", "bike_r", "surface", "walk_l", "walk_r"]
     tags = dict(zip(tags, [*range(0, len(tags))]))
     return tags
     
 def speed(data, tags):
-    vbike = 17
-    vwalk = 4.8
-    #--push the bike--#
-    if data[tags["bike_osm"]] == "no":
-        vbike = 4
-    if data[tags["highway"]] in ["footway", "pedestrian"]:
-        vbike = 4
-        vwalk = 5
-    if data[tags["highway"]] == "steps":
-        vbike = 2
-        vwalk = 2
-    if data[tags["highway"]] == "cycleway":
-        vbike = 19
-    data[tags["vBike_FT"]], data[tags["vBike_TF"]] = vbike, vbike
-    data[tags["vWalk_FT"]], data[tags["vWalk_TF"]] = vwalk, vwalk
+    vbike = [17, 17]
+    vwalk = [4.8, 4.8]
+    
+    #--highway--#
+    if data[tags["highway"]] in ["footway", "pedestrian"]: vbike, vwalk = [4,4], [5,5]
+    if data[tags["highway"]] == "steps": vbike, vwalk = [2,2], [2,2]
+    if data[tags["highway"]] == "cycleway": vbike, vwalk = [20,20], [3,3]
+    #--bicycle / foot--"
+    if data[tags["bicycle"]] in ["no", "use_sidepath"]: vbike = [4,4]
+    if data[tags["bicycle"]] == "designated": vbike[0], vbike[1] = max(vbike[0], 18), max(vbike[1], 18)
+    if data[tags["bicycle"]] == "yes": vbike[0], vbike[1] = max(vbike[0], 17), max(vbike[1], 17)
+    if data[tags["foot"]] in ["no", "use_sidepath"]: vwalk = [3,3]
+    #--cycleway / sidewalk--#
+    if data[tags["cycleway"]] in ["lane", "cyclestreet", "track", "sidepath"]: vbike[0], vbike[1] = max(vbike[0], 18.5), max(vbike[1], 18.5)
+    if data[tags["cycleway"]] == "opposite": vbike = [17,12]
+    if data[tags["cycleway"]] == "share_busway": vbike = [15,15]
+    if data[tags["sidewalk"]] in ["no", "use_sidepath", "none", "separate"]: vwalk[0], vwalk[1] = min(vwalk[0], 3), min(vwalk[1], 3)
+    #--cycleway:right / cycleway:left--#
+    if data[tags["bike_r"]] in ["lane", "track"]: vbike[0] = max(vbike[0], 18.5)
+    if data[tags["bike_r"]] == "share_busway": vbike[0] = min(vbike[0], 15)
+    if data[tags["bike_r"]] in ["opposite", "separate"]: vbike[0] = min(vbike[0], 4)
+    if data[tags["bike_l"]] in ["lane", "track"]: vbike[0] = max(vbike[0], 18.5)
+    if data[tags["bike_l"]] == "share_busway": vbike[1] = min(vbike[1], 15)
+    if data[tags["bike_l"]] in ["no", "opposite", "separate"]: vbike[1] = min(vbike[1], 4)
+    #--sidewalk:right / sidewalk:left--#
+    if data[tags["walk_r"]] in ["no", "separate"]: vwalk[0] = min(vwalk[0], 3)
+    if data[tags["walk_l"]] in ["no", "separate"]: vwalk[1] = min(vwalk[1], 3)
+    vwalk[0], vwalk[1] = max(vwalk), max(vwalk)
+    #--surface--#
+    if data[tags["surface"]] in ["asphalt", "concrete"]: vbike[0], vbike[1] = vbike[0]*1.05, vbike[1]*1.05
+    if data[tags["surface"]] in ["compacted"]: vbike[0], vbike[1] = vbike[0]*0.95, vbike[1]*0.95
+    if data[tags["surface"]] in ["ground", "unpaved", "pebblestone", "gravel"]: vbike[0], vbike[1] = vbike[0]*0.9, vbike[1]*0.9
+    if data[tags["surface"]] in ["dirt", "grass", "cobblestone", "earth"]: vbike[0], vbike[1] = vbike[0]*0.85, vbike[1]*0.85
+    if data[tags["surface"]] in ["mud", "sand"]: vbike[0], vbike[1] = vbike[0]*0.7, vbike[1]*0.7
+    
+    data[tags["vBike_FT"]], data[tags["vBike_TF"]] = vbike[0], vbike[1]
+    data[tags["vWalk_FT"]], data[tags["vWalk_TF"]] = vwalk[0], vwalk[1]
     
 def time(id_field, osm_type, data, tags):
     vbike_FT, vbike_TF = data[tags["vBike_FT"]], data[tags["vBike_TF"]]
