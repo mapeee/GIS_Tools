@@ -32,7 +32,7 @@ def field_test(FC, tags):
 
 def osm_dict(id_field):
     tags = [id_field,"Bike","Walk","Bike_man","Walk_man",
-                "access","highway","bike_osm","walk_osm","service"]
+                "access","highway","bicycle","foot","service"]
     tags = dict(zip(tags, [*range(0, len(tags))]))
     return tags
     
@@ -53,14 +53,14 @@ def permission(data, tags, manual):
         bike = 0
         walk = 0
     #--bike--#
-    if data[tags["bike_osm"]] == "no":
+    if data[tags["bicycle"]] in ["no", "use_sidepath"]:
         bike = 0
-    if data[tags["bike_osm"]] == "yes":
+    if data[tags["bicycle"]] == "yes":
         bike = 1
     #--walk--#
-    if data[tags["walk_osm"]] == "no":
+    if data[tags["foot"]] in ["no", "use_sidepath"]:
         walk = 0
-    if data[tags["walk_osm"]] == "yes":
+    if data[tags["foot"]] == "yes":
         walk = 1
     #--bike and walk--#
     if walk == 1:
