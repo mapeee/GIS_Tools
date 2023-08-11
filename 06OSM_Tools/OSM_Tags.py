@@ -22,11 +22,11 @@ osm_tags = arcpy.GetParameterAsText(3).split(";")
 def add_tags(FC, osmTags):
     tags_list = [["access","access","TEXT"],
             ["area","area","TEXT"],
-            ["bicycle","Bike_osm","TEXT"],
+            ["bicycle","bicycle","TEXT"],
             ["cycleway:left","bike_l","TEXT"],
             ["cycleway:right","bike_r","TEXT"],
             ["cycleway","cycleway","TEXT"],
-            ["foot","Walk_osm","TEXT"],
+            ["foot","foot","TEXT"],
             ["highway","highway","TEXT"],
             ["service","service","TEXT"],
             ["sidewalk:left","walk_l","TEXT"],
