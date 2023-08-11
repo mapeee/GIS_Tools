@@ -66,6 +66,7 @@ def permission(data, tags, manual):
     if walk == 1:
         bike = 1
     
+    #--use manual values--#
     if manual == True:
         if data[tags["Walk_man"]] != 9:
             walk = data[tags["Walk_man"]]
