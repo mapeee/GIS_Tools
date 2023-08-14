@@ -27,5 +27,9 @@ def result_print(osmID, osm_type):
         for tag in result.get_way(osmID).tags:
             value = result.get_way(osmID).tags.get(tag, "n/a")
             arcpy.AddMessage(tag+": "+value)
+    if osm_type == "node":
+        for tag in result.get_node(osmID).tags:
+            value = result.get_node(osmID).tags.get(tag, "n/a")
+            arcpy.AddMessage(tag+": "+value)
 
 result_print(osmID, osm_type)
