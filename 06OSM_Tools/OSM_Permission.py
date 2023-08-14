@@ -49,7 +49,7 @@ def permission(data, tags, manual):
     if data[tags["highway"]] in ["motorway","motorway_link","busway","construction","trunk","trunk_link"]:
         bike = 0
         walk = 0
-    if data[tags["service"]] in ["parking_aisle"]:
+    if data[tags["service"]] in ["parking_aisle", "driveway"]:
         bike = 0
         walk = 0
     #--bike--#
