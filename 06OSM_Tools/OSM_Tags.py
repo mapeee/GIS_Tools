@@ -26,6 +26,7 @@ def add_tags(FC, osmTags):
             ["cycleway:left","bike_l","TEXT"],
             ["cycleway:right","bike_r","TEXT"],
             ["cycleway","cycleway","TEXT"],
+            ["crossing","crossing","TEXT"],
             ["foot","foot","TEXT"],
             ["highway","highway","TEXT"],
             ["service","service","TEXT"],
@@ -74,6 +75,9 @@ def write_data(FC, osmID, osmTags, osmType, FCrows):
                 for e, tag in enumerate(osmTags[0]):
                     if osmType == "way":
                         try: row[e+1] = str(osm_data.get_way(osmNo).tags.get(tag, "n/a"))
+                        except: row[e+1] = "osm_id missing"
+                    if osmType == "node":
+                        try: row[e+1] = str(osm_data.get_node(osmNo).tags.get(tag, "n/a"))
                         except: row[e+1] = "osm_id missing"
             
             cursor.updateRow(row)
