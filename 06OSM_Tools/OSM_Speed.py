@@ -15,7 +15,10 @@ import sys
 #--ArcGIS Parameter--#
 geodata = arcpy.GetParameterAsText(0)
 osm_id_field = arcpy.GetParameterAsText(1)
-osm_type = arcpy.GetParameterAsText(2)
+
+global geo_type
+geo_type = arcpy.Describe(geodata).ShapeType
+arcpy.AddMessage("> Geometry type: "+geo_type)
 
 def field_test(FC, tags):
     missing = []
@@ -29,9 +32,42 @@ def field_test(FC, tags):
     else:
         arcpy.AddMessage("> All tags existing")
 
+def linktime(id_field, data, tags):
+    vbike_FT, vbike_TF = data[tags["vBike_FT"]], data[tags["vBike_TF"]]
+    vwalk_FT, vwalk_TF = data[tags["vWalk_FT"]], data[tags["vWalk_TF"]]
+    meter = data[tags["Meter"]]
+    
+    data[tags["tBike_FT"]], data[tags["tBike_TF"]] = (meter/(vbike_FT/3.6))/60, (meter/(vbike_TF/3.6))/60
+    data[tags["tWalk_FT"]], data[tags["tWalk_TF"]] = (meter/(vwalk_FT/3.6))/60, (meter/(vwalk_TF/3.6))/60
+    
+    #--steps--#
+    if data[tags["highway"]] == "steps":
+        data[tags["tBike_FT"]], data[tags["tBike_TF"]] = data[tags["tBike_FT"]]+0.25, data[tags["tBike_TF"]]+0.25 #15s to sit on and off
+        try:
+            data[tags["tBike_FT"]] = data[tags["tBike_FT"]]+(int(data[tags["step_count"]])*(0.85/60))
+            data[tags["tBike_TF"]] = data[tags["tBike_TF"]]+(int(data[tags["step_count"]])*(0.85/60))
+            data[tags["tWalk_FT"]] = data[tags["tWalk_FT"]]+(int(data[tags["step_count"]])*(0.65/60))
+            data[tags["tWalk_TF"]] = data[tags["tWalk_TF"]]+(int(data[tags["step_count"]])*(0.65/60))
+        except:
+            data[tags["tBike_FT"]], data[tags["tBike_TF"]] = data[tags["tBike_FT"]]+0.1, data[tags["tBike_TF"]]+0.1
+            data[tags["tWalk_FT"]], data[tags["tWalk_TF"]] = data[tags["tWalk_FT"]]+0.1, data[tags["tWalk_TF"]]+0.1
+
+def nodetime(data, tags):
+    if data[tags["fclass"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]] = 10, 0
+    elif data[tags["fclass"]] == "crossing":
+        if data[tags["crossing"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]] = 4, 5
+        elif data[tags["crossing"]] == "marked": data[tags["tBike"]], data[tags["tWalk"]] = 3, 2
+        elif data[tags["crossing"]] == "zebra": data[tags["tBike"]], data[tags["tWalk"]] = 3, 2
+        else: data[tags["tBike"]], data[tags["tWalk"]] = 0, 0
+    else: data[tags["tBike"]], data[tags["tWalk"]] = 0, 0
+
 def osm_dict(id_field):
-    tags = [id_field,"vBike_FT","tBike_FT","vWalk_FT","tWalk_FT","vBike_TF","tBike_TF","vWalk_TF","tWalk_TF","Meter",
-                "highway","bicycle","foot","step_count","cycleway", "sidewalk", "bike_l", "bike_r", "surface", "walk_l", "walk_r"]
+    if geo_type == "Polyline":
+        tags = [id_field,"vBike_FT","tBike_FT","vWalk_FT","tWalk_FT","vBike_TF","tBike_TF","vWalk_TF","tWalk_TF","Meter",
+                    "highway","bicycle","foot","step_count","cycleway", "sidewalk", "bike_l", "bike_r", "surface",
+                    "walk_l", "walk_r"]
+    if geo_type == "Point":
+        tags = [id_field, "tBike", "tWalk", "fclass", "crossing"]
     tags = dict(zip(tags, [*range(0, len(tags))]))
     return tags
     
@@ -73,32 +109,15 @@ def speed(data, tags):
     
     data[tags["vBike_FT"]], data[tags["vBike_TF"]] = vbike[0], vbike[1]
     data[tags["vWalk_FT"]], data[tags["vWalk_TF"]] = vwalk[0], vwalk[1]
-    
-def time(id_field, osm_type, data, tags):
-    vbike_FT, vbike_TF = data[tags["vBike_FT"]], data[tags["vBike_TF"]]
-    vwalk_FT, vwalk_TF = data[tags["vWalk_FT"]], data[tags["vWalk_TF"]]
-    meter = data[tags["Meter"]]
-    
-    data[tags["tBike_FT"]], data[tags["tBike_TF"]] = (meter/(vbike_FT/3.6))/60, (meter/(vbike_TF/3.6))/60
-    data[tags["tWalk_FT"]], data[tags["tWalk_TF"]] = (meter/(vwalk_FT/3.6))/60, (meter/(vwalk_TF/3.6))/60
-    
-    #--steps--#
-    if data[tags["highway"]] == "steps":
-        data[tags["tBike_FT"]], data[tags["tBike_TF"]] = data[tags["tBike_FT"]]+0.25, data[tags["tBike_TF"]]+0.25 #15s to sit on and off
-        try:
-            data[tags["tBike_FT"]] = data[tags["tBike_FT"]]+(int(data[tags["step_count"]])*(0.85/60))
-            data[tags["tBike_TF"]] = data[tags["tBike_TF"]]+(int(data[tags["step_count"]])*(0.85/60))
-            data[tags["tWalk_FT"]] = data[tags["tWalk_FT"]]+(int(data[tags["step_count"]])*(0.65/60))
-            data[tags["tWalk_TF"]] = data[tags["tWalk_TF"]]+(int(data[tags["step_count"]])*(0.65/60))
-        except:
-            data[tags["tBike_FT"]], data[tags["tBike_TF"]] = data[tags["tBike_FT"]]+0.1, data[tags["tBike_TF"]]+0.1
-            data[tags["tWalk_FT"]], data[tags["tWalk_TF"]] = data[tags["tWalk_FT"]]+0.1, data[tags["tWalk_TF"]]+0.1
 
 #--editing--#        
 osm_tags = osm_dict(osm_id_field)    
 field_test(geodata,osm_tags)
 with arcpy.da.UpdateCursor(geodata, list(osm_tags.keys())) as cursor:
     for row in cursor:
-        speed(row,osm_tags)
-        time(osm_id_field,osm_type,row,osm_tags)
+        if geo_type == "Polyline":
+            speed(row,osm_tags)
+            linktime(osm_id_field,row,osm_tags)
+        if geo_type == "Point":
+            nodetime(row,osm_tags)
         cursor.updateRow(row)
