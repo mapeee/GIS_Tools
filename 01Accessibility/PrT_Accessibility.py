@@ -64,8 +64,6 @@ def costattr():
     for attribute in attributes:
         if attribute.usageType == "Cost":cost_attr.append(str(attribute.name))
 
-def exp_aggr(series): return int(round(sum(np.exp(series[Costs]*n) * series[Column])))
-
 def distance(group, groups):
     arcpy.Delete_management("P_Shape")
     if Filter_Group_P:
@@ -214,7 +212,7 @@ def potential(origins,loop):
         if e[-4:] == "Expo":
             for n in potfak:
                 n = float(n)
-                Values = routes.groupby([ID_A]).agg(exp_aggr).reset_index(drop=False)[[ID_A,Column]]
+                Values = routes.groupby([ID_A]).agg(int(round(sum(np.exp(routes[Costs]*n) * routes[Column])))).reset_index(drop=False)[[ID_A,Column]]
                 Result = pandas.merge(Result,Values,how="left",left_on=ID_A,right_on=ID_A)
 
     Result = Result.fillna(0)
