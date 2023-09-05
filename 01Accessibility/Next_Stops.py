@@ -15,7 +15,8 @@ from datetime import date
 import h5py
 import numpy as np
 import time
-start_time = time.clock()
+start_time = time.time()
+ 
 arcpy.CheckOutExtension("Network")
 
 #--GIS Parameters--#
@@ -75,7 +76,7 @@ def HDF5(Datenbank,Potential,results):
     file5 = h5py.File(Datenbank,'r+')
     group5 = file5[Group]
     Fields = [('Start_ID', 'int32'),('Stop_NO', 'int32'),('Bahn', 'i2')]
-    for i in cost_attr: Fields.append((i.encode('ascii'),'f8'))
+    for i in cost_attr: Fields.append((i,'f8'))
 
     #--Basic data HDF5--#
     if Potential[0] != "":
@@ -105,6 +106,7 @@ def HDF5(Datenbank,Potential,results):
 def ODLayer(mod,FC,FC_ID,fieldmap):
     arcpy.AddMessage("> starting with: "+mod[0])
     costattr()
+    search_criteria()
     if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" = 0")
     else: arcpy.MakeFeatureLayer_management(FC, "stops",BahnFeld+" > 0")
     if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
@@ -112,7 +114,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
     arcpy.MakeODCostMatrixLayer_na(Network,"ODLayer",Costs,MaxCosts,mod[1],cost_attr,"","","","","NO_LINES")
 
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Destinations","stops","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",s_crit ,"","","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Destinations","stops",fieldmap,"","","","","","","","EXCLUDE")
     arcpy.AddMessage("> "+mod[0]+"stops added \n")
     if Barrieren != "": arcpy.AddLocations_na("ODLayer","Line Barriers",Barrieren)
@@ -120,13 +122,20 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
 def ODRouting(FC,FC_ID,OID,row,fieldmap):
     arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
     if fieldmap == "": arcpy.AddLocations_na("ODLayer","Origins","places","Name "+FC_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","CLEAR","","","EXCLUDE")
+    " 0; Attr_Minutes # #","","",s_crit,"","CLEAR","","","EXCLUDE")
     else: arcpy.AddLocations_na("ODLayer","Origins","places",fieldmap,"","","","","CLEAR","","","EXCLUDE")
     try: arcpy.Solve_na("ODLayer","SKIP","CONTINUE") ##SKIP:Not Located is skipped
     except:
         arcpy.AddMessage("> error "+str(row)+" bis "+str(row+5000))
         arcpy.Delete_management("places")
         raise
+        
+def search_criteria():
+    global s_crit
+    s_crit = []
+    desc = arcpy.Describe(Network)
+    for i in desc.edgeSources:s_crit.append([i.name,"SHAPE"])
+    for i in desc.junctionSources:s_crit.append([i.name,"NONE"])
 
 ##############
 #--starting--#
@@ -145,7 +154,7 @@ for mod in Modus:
         arcpy.AddMessage("> mod: "+mod[0])
         ODRouting(Start, Start_ID, Orig_fm[0], place, Orig_fm[1])
         results = results + ExportRoutes(mod)
-        arcpy.AddMessage("> time: "+str(int((time.clock() - start_time)/60))+" minutes \n")
+        arcpy.AddMessage("> time: "+str(round(int(time.time()-start_time)/60,1))+" minutes \n")
     arcpy.Delete_management("stops")
     arcpy.Delete_management("ODLayer")
     arcpy.AddMessage("> "+mod[0]+" finished")
