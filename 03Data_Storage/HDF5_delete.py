@@ -1,10 +1,8 @@
 # -*- coding: cp1252 -*-
 #!/usr/bin/python
 #Oktober 2015
-#für Python 2.7.5
 
 #---Vorbereitung---#
-import sys
 import arcpy
 import h5py
 
