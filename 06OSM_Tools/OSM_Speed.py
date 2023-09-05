@@ -82,7 +82,8 @@ def speed(data, tags):
     #--bicycle / foot--"
     if data[tags["bicycle"]] in ["no", "use_sidepath"]: vbike = [4,4]
     if data[tags["bicycle"]] == "designated": vbike[0], vbike[1] = max(vbike[0], 18), max(vbike[1], 18)
-    if data[tags["bicycle"]] == "yes": vbike[0], vbike[1] = max(vbike[0], 17), max(vbike[1], 17)
+    if data[tags["bicycle"]] == "yes" and data[tags["highway"]] in ["footway", "pedestrian"]: vbike[0], vbike[1] = max(vbike[0], 10), max(vbike[1], 10)
+    if data[tags["bicycle"]] == "yes" and data[tags["highway"]] not in ["footway", "pedestrian"]: vbike[0], vbike[1] = max(vbike[0], 17), max(vbike[1], 17)
     if data[tags["foot"]] in ["no", "use_sidepath"]: vwalk = [3,3]
     #--cycleway / sidewalk--#
     if data[tags["cycleway"]] in ["lane", "cyclestreet", "track", "sidepath"]: vbike[0], vbike[1] = max(vbike[0], 18.5), max(vbike[1], 18.5)
