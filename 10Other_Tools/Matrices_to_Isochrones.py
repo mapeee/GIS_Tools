@@ -119,7 +119,7 @@ def scenario(I_S,I_0,gr5):
 def text(dset):
     Text = str(Network.split("\\")[-1])+"; period: "+str(int(hours/60))+"h; Origin wait: "+str(Origin_wait_time)+"; max time: "+\
         str(max_time)+"min; Date: "+str(date.today().strftime("%B %d, %Y"))
-    dset.attrs.create("Parameter",Text)
+    dset.attrs.create("Parameters",Text)
     file5.flush()
 
 def VISUM_open(Network,cal):
