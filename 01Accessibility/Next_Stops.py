@@ -77,13 +77,13 @@ def HDF5(Database,Potential,results):
 
     #--Basic data HDF5--#
     if Potential[0] != "":
-        Potential = (Places_ID.encode('ascii'),) + tuple(Potential)
+        Potential = (Places_ID,) + tuple(Potential)
         Strukturen = arcpy.da.FeatureClassToNumPyArray(Places,Potential)
         dtypes = Strukturen.dtype
         for i in range(len(Potential)-1): ##-1 without Start_ID
             Fields.append((dtypes.names[i+1],dtypes[i+1].name)) ##+1 skip first row
         for i in range(len(results)):
-            index = np.where(Strukturen[Places_ID.encode('ascii')]==results[i][0])[0][0]
+            index = np.where(Strukturen[Places_ID]==results[i][0])[0][0]
             for h in range(len(Strukturen[index])-1):
                 w = Strukturen[index][h+1] ##+1, um die erste Spalte zu überspringen
                 results[i] = results[i]+(w,)
@@ -103,15 +103,15 @@ def HDF5(Database,Potential,results):
 def ODLayer(mod,FC,FC_ID,fieldmap):
     arcpy.AddMessage("> starting with: "+mod[0])
     costattr()
-    search_criteria()
+    search_params()
     if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",TrainStation+" = 0")
     else: arcpy.MakeFeatureLayer_management(FC, "stops",TrainStation+" > 0")
     if mod[1] == 0: arcpy.AddMessage("> no stops in mode: "+mod[0])
     
-    arcpy.na.MakeODCostMatrixAnalysisLayer(Network,"ODLayer",Mode,MaxCosts,mod[1],line_shape="NO_LINES",accumulate_attributes=cost_attr)
+    arcpy.na.MakeODCostMatrixAnalysisLayer(Network,"ODLayer",Mode,MaxCosts,mod[1],"","","NO_LINES",cost_attr)
     
     if fieldmap == "": arcpy.na.AddLocations("ODLayer","Destinations","stops","Name "+FC_ID+\
-    " 0","","",s_crit,"","","SNAP")
+    " 0","","",search_crit,"","","SNAP")
     else: arcpy.na.AddLocations("ODLayer","Destinations","stops",fieldmap)
     arcpy.AddMessage("> "+mod[0]+"stops added \n")
     if Barriers != "": arcpy.na.AddLocations("ODLayer","Line Barriers",Barriers)
@@ -119,7 +119,7 @@ def ODLayer(mod,FC,FC_ID,fieldmap):
 def ODRouting(FC,FC_ID,OID,row,fieldmap):
     arcpy.MakeFeatureLayer_management(FC, "places",OID+" >= "+str(row)+" and "+OID+" < "+str(row+5000))
     if fieldmap == "": arcpy.na.AddLocations("ODLayer","Origins","places","Name "+FC_ID+\
-    " 0","","",s_crit,"","CLEAR","SNAP","","",search_query)
+    " 0","","",search_crit,"","CLEAR","SNAP","","",search_query)
     else: arcpy.na.AddLocations("ODLayer","Origins","places",fieldmap,"","","","","CLEAR")
     try: arcpy.na.Solve("ODLayer","SKIP","CONTINUE")
     except:
@@ -127,16 +127,16 @@ def ODRouting(FC,FC_ID,OID,row,fieldmap):
         arcpy.Delete_management("places")
         raise
         
-def search_criteria():
-    global s_crit
-    s_crit = []
+def search_params():
+    global search_crit
+    search_crit = []
     desc = arcpy.Describe(Network)
-    for i in desc.edgeSources:s_crit.append([i.name,"SHAPE"])
-    for i in desc.junctionSources:s_crit.append([i.name,"NONE"])
+    for i in desc.edgeSources:search_crit.append([i.name,"SHAPE"])
+    for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
     if desc.name == "MRH_NMT_Network":
-        search_query = [["MRH_Links", "(bridge <> 'T' and tunnel <> 'T') or (tunnel = 'T' and access = 'customers')"]]
+        search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
     else: search_query = ""
 
 ##############
@@ -150,10 +150,8 @@ Desti_fm = checkfm(Stops, Stops_ID)
 #--routing--#
 results = [] ##to fill into HDF5 table
 for mod in Modus:
-    if mod[0]=="bus":continue
     ODLayer(mod, Stops, Stops_ID, Desti_fm[1])
     for place in range(0,Places_n,5000):
-        if place >4000:continue
         arcpy.AddMessage("> places from "+str(place)+" to "+str(place+5000))
         arcpy.AddMessage("> mod: "+mod[0])
         ODRouting(Places, Places_ID, Orig_fm[0], place, Orig_fm[1])
