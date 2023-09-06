@@ -31,7 +31,9 @@ group5 = file5[Group]
 if Methode == "HDF5_to_GIS":
     for i in TabelleHDF5:
         a = np.array(group5[i])
-        arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i)
+        try:arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i)
+        except:arcpy.da.NumPyArrayToTable(a,Path_GIS+"/"+i+"_1")
+        
 else:
     data_FC = arcpy.da.FeatureClassToNumPyArray(FC,Felder)
     group5.create_dataset(Tabelle_E, data=data_FC, dtype=data_FC.dtype)
