@@ -16,28 +16,38 @@ places = arcpy.GetParameterAsText(0)
 ID_corr = bool(arcpy.GetParameterAsText(1)=="true")
 car_network = arcpy.GetParameterAsText(2)
 search_tolerance_car = arcpy.GetParameterAsText(3)+" Meters"
-search_criteria_car = arcpy.GetParameterAsText(4).split(";")
-NMT_network = arcpy.GetParameterAsText(5)
-search_tolerance_NMT = arcpy.GetParameterAsText(6)+" Meters"
-search_criteria_NMT = arcpy.GetParameterAsText(7).split(";")
+NMT_network = arcpy.GetParameterAsText(4)
+search_tolerance_NMT = arcpy.GetParameterAsText(5)+" Meters"
 
 arcpy.AddMessage("> starting\n")
 
-def calc_locations(locations, network,search_tolerance,search_criteria,ND):
+def calc_locations(locations, network,search_tolerance,ND):
+    search_params(network,ND)
     arcpy.AddMessage("> calculate locations for "+ND)
 
-    desc = arcpy.Describe(network)
-    crit_network = [i.name for i in desc.sources]
-    search_crit = []
-    for i in crit_network:
-        if i in search_criteria: search_crit.append([i,"Shape"])
-        else: search_crit.append([i,"NONE"])
-
-    try: arcpy.DeleteField_management(locations, ["SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,"SnapY_"+ND,"Distance_"+ND])
+    try: arcpy.DeleteField_management(locations, ["SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,
+                                                  "SnapY_"+ND,"DistanceToNetworkInMeters_"+ND])
     except: pass
 
     arcpy.na.CalculateLocations(locations, network, search_tolerance,search_crit,
-                    "MATCH_TO_CLOSEST","SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,"SnapY_"+ND,"Distance_"+ND)
+                    "MATCH_TO_CLOSEST","SourceID_"+ND,"SourceOID_"+ND,"PosAlong_"+ND,"SideOfEdge_"+ND,"SnapX_"+ND,
+                    "SnapY_"+ND,"DistanceToNetworkInMeters_"+ND,search_query=search_query,travel_mode=travel_mode)
+
+def search_params(Net,mod):
+    global search_crit
+    search_crit = []
+    desc = arcpy.Describe(Net)
+    for i in desc.edgeSources:search_crit.append([i.name,"SHAPE"])
+    for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
+    
+    global search_query
+    if mod == "NMT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
+    elif mod == "MT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F')"]]
+    else: search_query = ""
+    
+    global travel_mode
+    if mod == "NMT": travel_mode = "Walking"
+    else: travel_mode = "Car"
 
 #--ID Field--#
 if ID_corr == True:
@@ -66,8 +76,8 @@ if ID_corr == True:
                 cursor.updateRow(row)
 
 #--calculate locations--#
-if car_network: calc_locations(places, car_network,search_tolerance_car,search_criteria_car,"MIV")
-if NMT_network: calc_locations(places, NMT_network,search_tolerance_NMT,search_criteria_NMT,"NMIV")
+if car_network: calc_locations(places, car_network,search_tolerance_car,"MT")
+if NMT_network: calc_locations(places, NMT_network,search_tolerance_NMT,"NMT")
 arcpy.AddMessage("\n")
 
 #end
