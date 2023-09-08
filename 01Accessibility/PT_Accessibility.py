@@ -2,7 +2,6 @@
 #!/usr/bin/python
 #Calculate distance and gravity/contour PT Accessibility
 #Marcus September 2015; new Version December 2021
-#Python 2.7.5
 
 import arcpy
 from datetime import date
@@ -46,7 +45,7 @@ O_Shape = arcpy.GetParameterAsText(24)
 P_Shape = arcpy.GetParameterAsText(25)
 Network = arcpy.GetParameterAsText(26)
 Radius = int(arcpy.GetParameterAsText(27))
-Costs = arcpy.GetParameterAsText(28)
+Mode = arcpy.GetParameterAsText(28)
 Max_Costs = int(arcpy.GetParameterAsText(29))
 
 Node_O = "Stop_NO"
@@ -65,8 +64,9 @@ Day = ("1;1").split(";")
 def checkfm(FC, FC_ID):
     for field in arcpy.Describe(FC).fields:
         if "SnapX" in field.name:
-            fm = "Name "+FC_ID+" 0; SourceID SourceID_NMIV 0;SourceOID SourceOID_NMIV 0"\
-            ";PosAlong PosAlong_NMIV 0;SideOfEdge SideOfEdge_NMIV 0; Attr_Minutes # #"
+            fm = "Name "+FC_ID+" 0; SourceID SourceID_NMT 0;SourceOID SourceOID_NMT 0"\
+            ";PosAlong PosAlong_NMT 0;SideOfEdge SideOfEdge_NMT 0; SnapX SnapX_NMT 0"\
+            "; SnapY SnapY_NMT 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_NMT 0"
             return fm
 
 def distance():
@@ -257,7 +257,7 @@ def iso_slice(dsetO,dsetP,Iso_I):
         else: header = 50 * to_find
     else: header = 10000
     loop_from, loop_range = 0, 1000000
-    loops = (len(Iso_I)/loop_range)+1 ## +1 due to rounding
+    loops = int(len(Iso_I)/loop_range)+1 ## +1 due to rounding
 
     #disaggregate Isochrones into parts due to the size
     for k in range(loops):
@@ -287,12 +287,10 @@ def NMT():
     if Filter_Group_P: NMT_find = 50
     elif "Potential" in Modus: NMT_find = ""
     else: NMT_find = to_find+1
-    arcpy.MakeODCostMatrixLayer_na(Network,"ODMATRIX",Costs,Max_Costs,NMT_find,[Costs],"","","","","NO_LINES")
-    p = arcpy.na.GetSolverProperties(arcpy.mapping.Layer("ODMATRIX"))
-    Restriction_0 = list(p.restrictions) ##activate all restrictions
-    p.restrictions = Restriction_0
-    del p
-    if Barriers != "": arcpy.AddLocations_na("ODMATRIX","Line Barriers",Barriers,"","")
+
+    arcpy.na.MakeODCostMatrixAnalysisLayer(Network,"ODMATRIX",Mode,Max_Costs,NMT_find,"","","NO_LINES",[Costs])
+
+    if Barriers != "": arcpy.na.AddLocations("ODMATRIX","Line Barriers",Barriers)
 
     arcpy.MakeFeatureLayer_management(O_Shape, "O_Shape")
     fm_O = checkfm("O_Shape",O_Shape_ID)
@@ -303,13 +301,13 @@ def NMT():
     if "Distance" in Modus: arcpy.SelectLayerByLocation_management("O_Shape","intersect","P_Shape",Radius)
     if "Potential" in Modus: arcpy.SelectLayerByLocation_management("P_Shape","intersect","O_Shape",Radius)
 
-    if fm_O is None:arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape","Name "+O_Shape_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Origins","O_Shape",fm_O,"","","","","CLEAR","","","EXCLUDE")
+    if fm_O is None:arcpy.na.AddLocations("ODMATRIX","Origins","O_Shape","Name "+O_Shape_ID+\
+    " 0","","",search_crit,"","","SNAP","","",search_query)
+    else: arcpy.na.AddLocations("ODMATRIX","Origins","O_Shape",fm_O,"","","","","CLEAR")
 
-    if fm_P is None: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
-    " 0; Attr_Minutes # #","","",[["MRH_Wege_Split", "SHAPE"],["MRH_Luecken", "SHAPE"],["Ampeln", "NONE"],["Faehre_NMIV", "NONE"]],"","","","","EXCLUDE")
-    else: arcpy.AddLocations_na("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR","","","EXCLUDE")
+    if fm_P is None: arcpy.na.AddLocations("ODMATRIX","Destinations","P_Shape","Name "+P_Shape_ID+\
+    " 0","","",search_crit,"","","SNAP","","",search_query)
+    else: arcpy.na.AddLocations("ODMATRIX","Destinations","P_Shape",fm_P,"","","","","CLEAR")
 
     arcpy.na.Solve("ODMATRIX","","CONTINUE")
 
@@ -438,6 +436,23 @@ def smooth_pt(data,group_state):
     data.drop('minTime', axis=1, inplace=True)
     return data
 
+def search_params():
+    global search_crit
+    search_crit = []
+    desc = arcpy.Describe(Network)
+    for i in desc.edgeSources:search_crit.append([i.name,"SHAPE"])
+    for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
+    
+    global search_query
+    if desc.name == "MRH_Network":
+        search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
+    else: search_query = ""
+    
+    global Costs
+    travel_modes = arcpy.na.GetTravelModes(Network)
+    for tm in travel_modes:
+        if tm == Mode: Costs = travel_modes[tm].impedance
+
 def text():
     text = "Date: "+date.today().strftime("%B %d, %Y")+"; " +str("/".join(Modus))+\
     "; Time_limits: "+str("/".join(Time_limits))+";tofind: "+str(to_find)+\
@@ -451,6 +466,7 @@ def text():
 
 #--preparation--#
 text = text()
+search_params()
 file5, group5, group5_Iso, group5_Results = HDF5()
 dsetO, dsetP, IsoChronen = HDF5_Inputs()
 if "NMT" in Modus: proximity = NMT()
