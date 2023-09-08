@@ -41,8 +41,9 @@ def checkfm(FC, FC_ID):
     for field in arcpy.Describe(FC).fields:
         if field.type == "OID": OID = field.name
         if "SnapX" in field.name:
-            fm = "Name "+FC_ID+" 0; SourceID SourceID_NMIV 0;SourceOID SourceOID_NMIV 0"\
-            ";PosAlong PosAlong_NMIV 0;SideOfEdge SideOfEdge_NMIV 0; Attr_tAkt # #"
+            fm = "Name "+FC_ID+" 0; SourceID SourceID_NMT 0;SourceOID SourceOID_NMT 0"\
+            ";PosAlong PosAlong_NMT 0;SideOfEdge SideOfEdge_NMT 0; SnapX SnapX_NMT 0"\
+            "; SnapY SnapY_NMT 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_NMT 0"
     return OID, fm
 
 def costattr():
@@ -150,6 +151,7 @@ Desti_fm = checkfm(Stops, Stops_ID)
 #--routing--#
 results = [] ##to fill into HDF5 table
 for mod in Modus:
+    if mod[1]==0:continue
     ODLayer(mod, Stops, Stops_ID, Desti_fm[1])
     for place in range(0,Places_n,5000):
         arcpy.AddMessage("> places from "+str(place)+" to "+str(place+5000))
