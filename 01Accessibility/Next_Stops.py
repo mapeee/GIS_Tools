@@ -136,7 +136,7 @@ def search_params():
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if desc.name == "MRH_NMT_Network":
+    if desc.name == "MRH_Network":
         search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
     else: search_query = ""
 
