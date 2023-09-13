@@ -29,6 +29,7 @@ def add_tags(FC, osmTags):
             ["crossing","crossing","TEXT"],
             ["foot","foot","TEXT"],
             ["highway","highway","TEXT"],
+            ["motor_vehicle","motor_veh","TEXT"],
             ["service","service","TEXT"],
             ["sidewalk:left","walk_l","TEXT"],
             ["sidewalk:right","walk_r","TEXT"],
