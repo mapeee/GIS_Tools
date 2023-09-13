@@ -2,7 +2,7 @@
 # -*- coding: cp1252 -*-
 #-------------------------------------------------------------------------------
 # Name:        OSM Permission
-# Purpose:     Permission (non)motorized transport on networks
+# Purpose:     Permission (non-)motorized transport on networks
 # Author:      mape
 # Created:     04/08/2023
 # Copyright:   (c) mape 2023
@@ -31,15 +31,16 @@ def field_test(FC, tags):
         arcpy.AddMessage("> All tags existing")
 
 def osm_dict(id_field):
-    tags = [id_field,"Bike","Walk","Bike_man","Walk_man",
-                "access","highway","bicycle","foot","service"]
+    tags = [id_field,"Bike","Walk","Car","Bike_man","Walk_man","Car_man",
+                "access","highway","motor_veh","bicycle","foot","service"]
     tags = dict(zip(tags, [*range(0, len(tags))]))
     return tags
     
 def permission(data, tags, manual):
     bike = 1
     walk = 1
-    #--both--#
+    car = 1
+    #--bike and walk--#
     if data[tags["access"]] in ["private","no","permit","private;customers"]:
         bike = 0
         walk = 0
@@ -65,6 +66,13 @@ def permission(data, tags, manual):
     #--bike and walk--#
     if walk == 1:
         bike = 1
+    #--car--#
+    if data[tags["highway"]] in ["footway","cycleway","steps","construction","busway","path","pedestrian"]:
+        car = 0
+    if data[tags["access"]] in ["permissive","private","no","permit","private;customers"]:
+        car = 0
+    if data[tags["motor_veh"]] in ["permissive","private","no","permit","customers"]:
+        car = 0
     
     #--use manual values--#
     if manual == True:
@@ -72,9 +80,12 @@ def permission(data, tags, manual):
             walk = data[tags["Walk_man"]]
         if data[tags["Bike_man"]] != 9:
             bike = data[tags["Bike_man"]]
+        if data[tags["Car_man"]] != 9:
+            car = data[tags["Car_man"]]
 
     data[tags["Bike"]] = bike
     data[tags["Walk"]] = walk
+    data[tags["Car"]] = car
 
 #--editing--#        
 osm_tags = osm_dict(osm_id_field)    
