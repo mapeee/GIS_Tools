@@ -42,7 +42,7 @@ def search_params(Net,mod):
     
     global search_query
     if mod == "NMT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
-    elif mod == "MT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F')"]]
+    elif mod == "MT": search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"]]
     else: search_query = ""
     
     global travel_mode
