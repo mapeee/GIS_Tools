@@ -81,11 +81,11 @@ def speed(data, tags):
     #--maxspeed car--#
     if data[tags["maxspeed"]] == 0 and data[tags["town"]] == 0:
         try: vcar = {'motorway': 120, 'tertiary': 70, 'secondary': 80, 'residential': 25,
-                     'motorway_link': 30, 'primary': 100}[data[tags["highway"]]]
+                     'motorway_link': 40,'trunk_link': 30,'primary_link': 30, 'primary': 100}[data[tags["highway"]]]
         except: vcar = 15
     elif data[tags["maxspeed"]] == 0 and data[tags["town"]] == 1:
         try: vcar = {'motorway': 80, 'tertiary': 40, 'secondary': 45, 'residential': 25,
-                     'motorway_link': 30, 'primary': 50}[data[tags["highway"]]]
+                     'motorway_link': 40,'trunk_link': 30,'primary_link': 30, 'primary': 50}[data[tags["highway"]]]
         except: vcar = 15
     else: vcar = data[tags["maxspeed"]]
     
