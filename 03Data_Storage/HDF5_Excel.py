@@ -35,7 +35,8 @@ for i in dsetHDF5:
         wb = opxl.load_workbook(path_xls)
         sheet = wb.active
         try:
-            sheet.cell(1,1,unicode(data.attrs.values()[0], errors='ignore'))
+            for attr in data.attrs.keys():
+                sheet.cell(1,1,data.attrs[attr])
             sheet.cell(1,1).font = Font(color = '00FF0000')
         except: pass #if no attributes defined
         wb.save(path_xls)
