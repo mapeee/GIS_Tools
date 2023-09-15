@@ -52,6 +52,7 @@ def checkfm(FC, FC_ID):
     else: mode = "NMT"
     for field in arcpy.Describe(FC).fields:
         if "SnapX" in field.name:
+            arcpy.AddMessage("> using FieldMappings for "+FC)
             fm = "Name "+FC_ID+" 0; SourceID SourceID_"+mode+" 0;SourceOID SourceOID_"+mode+" 0"\
             ";PosAlong PosAlong_"+mode+" 0;SideOfEdge SideOfEdge_"+mode+" 0; SnapX SnapX_"+mode+" 0"\
             "; SnapY SnapY_"+mode+" 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_"+mode+" 0"
@@ -71,7 +72,7 @@ def distance(group, groups):
         arcpy.AddMessage("> group ID "+str(int(group))+" with "+str(len(dataP[dataP[Filter_Group_P]==group]))+" places")
     else:
         arcpy.MakeFeatureLayer_management(P_Shape, "P_Shape")
-        arcpy.AddMessage("> distances to next place out of "+str(len(dataP))+" places")
+        arcpy.AddMessage("\n> distances to next place out of "+str(len(dataP))+" places")
 
     if Filter_P: arcpy.SelectLayerByAttribute_management("P_Shape", "ADD_TO_SELECTION", Filter_P+">0")
 
@@ -233,7 +234,7 @@ def search_params():
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if PrT == "Motorized": search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F'"]]
+    if PrT == "Motorized": search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"]]
     else: search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
     
     global Costs
@@ -256,26 +257,27 @@ group5_Results = file5[Group_R]
 Results_T = HDF5_Results()
 
 #--measures--#
-arcpy.AddMessage("> calculate measures\n")
 ODLayer()
 
 dataP = arcpy.da.FeatureClassToNumPyArray(P_Shape,["*"],null_value=0)
 if Modus == "Distance":
+    arcpy.AddMessage("\n> calculate distance measures")
     if Filter_Group_P:
         Groups = np.unique(dataP[Filter_Group_P])
         arcpy.AddMessage("> groups: "+str(len(Groups))+"\n")
     else: Groups = [1]
     for e,i in enumerate(Groups):
-        arcpy.AddMessage("> group "+str(e+1)+"/"+str(len(Groups)))
+        if len(Groups) >1: arcpy.AddMessage("> group "+str(e+1)+"/"+str(len(Groups)))
         distance(i, Groups)
 
 if "Potential" in Modus:
+    arcpy.AddMessage("\n> calculate potential measures")
     Origins = int(arcpy.GetCount_management(A_Shape).getOutput(0))
     for origin_l in range(0,Origins,loops): potential(origin_l,loops)
 
 arcpy.AddMessage("> "+Modus+" measures finished")
 
 #end
-arcpy.AddMessage("> finished after "+str(int(time.time()-start_time))+" seconds")
+arcpy.AddMessage("\n> finished after "+str(int(time.time()-start_time))+" seconds")
 file5.flush()
 file5.close()
