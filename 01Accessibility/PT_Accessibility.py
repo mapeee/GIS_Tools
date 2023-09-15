@@ -14,7 +14,7 @@ import win32com.client.dynamic
 start_time = time.time()
 pandas.options.mode.chained_assignment = None
 arcpy.CheckOutExtension("Network")
-arcpy.AddMessage("> starting\n")
+arcpy.AddMessage("> starting")
 
 #--ArcGIS Parameter--#
 Modus = arcpy.GetParameterAsText(0).split(";")
@@ -64,12 +64,14 @@ Day = ("1;1").split(";")
 def checkfm(FC, FC_ID):
     for field in arcpy.Describe(FC).fields:
         if "SnapX" in field.name:
+            arcpy.AddMessage("> using FieldMappings for "+FC)
             fm = "Name "+FC_ID+" 0; SourceID SourceID_NMT 0;SourceOID SourceOID_NMT 0"\
             ";PosAlong PosAlong_NMT 0;SideOfEdge SideOfEdge_NMT 0; SnapX SnapX_NMT 0"\
             "; SnapY SnapY_NMT 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_NMT 0"
             return fm
 
 def distance():
+    arcpy.AddMessage("\n> calculate distance measures")
     if Filter_Group_P: Groups = np.unique(dsetP[Filter_Group_P])
     else: Groups = [1]
     for i, m in enumerate(Groups):
@@ -154,7 +156,7 @@ def HDF5_Inputs():
     if "Isochrones" in Modus: return dsetO, dsetP, ""
     IsoChronen = group5_Iso[Isochrone_Name]
     if "Scenario" in IsoChronen.attrs.keys():
-        arcpy.AddMessage("> calculate scenario\n")
+        arcpy.AddMessage("\n> calculate scenario")
         Iso_O = pandas.DataFrame(np.array(group5_Iso[IsoChronen.attrs["Scenario"]]))
         Iso_S = pandas.DataFrame(np.array(IsoChronen))
         Iso = Iso_O.merge(Iso_S[["FromStop","ToStop","Time"]],how="left",on=["FromStop","ToStop"])
@@ -178,10 +180,10 @@ def HDF5_Results():
                 for e in potfak:
                     e = str(e.split(".")[1])
                     if len(e)==2: e+="0"
-                    Columns.append(((i+e).encode('ascii'),'int32'))
+                    Columns.append((i+e,'int32'))
             elif i[-3:] == "Sum":
-                for e in sumfak: Columns.append(((i+e).encode('ascii'),'int32'))
-            else: Columns.append((i.encode('ascii'),'int32'))
+                for e in sumfak: Columns.append((i+e,'int32'))
+            else: Columns.append((i,'int32'))
 
     if "Distance" in Modus: Columns = [('Orig_ID', 'int32'),('FromStop','int32'),('Place_ID','int32'),
     ('ToStop','int32'),('Time', 'f8'),('Access', 'f8'),('Egress', 'f8'),('UH','i2'),('BH','i2'),('tofind','i2'),('Group','i2')]
@@ -244,7 +246,7 @@ def isochrones():
     file5.flush()
     del VISUM
 
-    arcpy.AddMessage("> finished after: "+str(int(time.time()-start_time)/60)+" minutes\n")
+    arcpy.AddMessage("> finished after: "+str(int(time.time()-start_time)/60)+" minutes")
     IsoChronen = pandas.DataFrame(np.array(IsoChronen))
     return IsoChronen
 
@@ -277,7 +279,7 @@ def iso_slice(dsetO,dsetP,Iso_I):
     return Iso_f
 
 def NMT():
-    arcpy.AddMessage("> starting with proximity area ("+str(Radius)+" meter)")
+    arcpy.AddMessage("\n> starting with proximity area ("+str(Radius)+" meter)")
     arcpy.AddMessage("> maximum costs: "+Costs+" = "+str(Max_Costs))
     arcpy.Delete_management("ODMATRIX")
     arcpy.Delete_management("P_Shape")
@@ -330,16 +332,14 @@ def NMT():
     if "Distance" in Modus: df["FromStop"], df["ToStop"] = [0,0]
     if "Potential" in Modus: df.drop([k_O,k_P+"_P"], axis=1, inplace=True)
 
-    #arcpy.management.SaveToLayerFile("ODMATRIX",r'PATH\CF_Ergebnis',"RELATIVE")
-
-    arcpy.AddMessage("> proximity area finished\n")
+    arcpy.AddMessage("> proximity area finished")
     return df
 
 def potential():
-    arcpy.AddMessage("> calculate potential measures")
+    arcpy.AddMessage("\n> calculate potential measures")
     Orig = np.unique(dsetO[ID_O])
     loop_from, loop_range = 0, 100
-    loops = (len(Orig)/loop_range)+1
+    loops = int((len(Orig)/loop_range)+1)
     Iso = iso_slice(dsetO,dsetP,IsoChronen)
 
     for loop in range(loops):
@@ -474,11 +474,10 @@ if "Isochrones" in Modus: IsoChronen = isochrones()
 Results_T = HDF5_Results()
 
 #--measures--#
-arcpy.AddMessage("> calculate measures\n")
 if "Distance" in Modus: distance()
 if "Potential" in Modus: potential()
 
 #end
-arcpy.AddMessage("> finished after "+str(int(time.time()-start_time))+" seconds")
+arcpy.AddMessage("\n> finished after "+str(int(time.time()-start_time))+" seconds")
 file5.flush()
 file5.close()
