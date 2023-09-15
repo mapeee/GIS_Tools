@@ -33,17 +33,20 @@ MaxCosts = arcpy.GetParameterAsText(10)
 TrainStation = arcpy.GetParameterAsText(11)
 Potential = arcpy.GetParameterAsText(12).split(";")
 Barriers = arcpy.GetParameterAsText(13)
-Modus = ["bus",int(ToFind.split(",")[0])],["train",int(ToFind.split(",")[1])]
+
+BusTrain = ["bus",int(ToFind.split(",")[0])],["train",int(ToFind.split(",")[1])]
+Mode2 = {'Walking': 'NMT', 'Cycling': 'NMT', 'Car': 'MT'}[Mode]
 
 
 def checkfm(FC, FC_ID):
     OID, fm = "", ""
     for field in arcpy.Describe(FC).fields:
         if field.type == "OID": OID = field.name
-        if "SnapX" in field.name:
-            fm = "Name "+FC_ID+" 0; SourceID SourceID_NMT 0;SourceOID SourceOID_NMT 0"\
-            ";PosAlong PosAlong_NMT 0;SideOfEdge SideOfEdge_NMT 0; SnapX SnapX_NMT 0"\
-            "; SnapY SnapY_NMT 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_NMT 0"
+        if "SnapX_"+Mode2 in field.name:
+            arcpy.AddMessage("> using FieldMappings for "+FC)
+            fm = "Name "+FC_ID+" 0; SourceID SourceID_"+Mode2+" 0;SourceOID SourceOID_"+Mode2+" 0"\
+            ";PosAlong PosAlong_"+Mode2+" 0;SideOfEdge SideOfEdge_"+Mode2+" 0; SnapX SnapX_"+Mode2+" 0"\
+            "; SnapY SnapY_"+Mode2+" 0; DistanceToNetworkInMeters DistanceToNetworkInMeters_"+Mode2+" 0"
     return OID, fm
 
 def costattr():
@@ -102,7 +105,7 @@ def HDF5(Database,Potential,results):
     return file5
 
 def ODLayer(mod,FC,FC_ID,fieldmap):
-    arcpy.AddMessage("> starting with: "+mod[0])
+    arcpy.AddMessage("\n> starting with: "+mod[0])
     costattr()
     search_params()
     if mod[0] == "bus": arcpy.MakeFeatureLayer_management(FC, "stops",TrainStation+" = 0")
@@ -136,38 +139,37 @@ def search_params():
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if desc.name == "MRH_Network":
-        search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
-    else: search_query = ""
+    if Mode2 == "NMT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
+    else: search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"]]
 
 ##############
 #--starting--#
 ##############
 Places_n = int(arcpy.GetCount_management(Places).getOutput(0))
-arcpy.AddMessage("> amount of places: "+str(Places_n)+"\n")
+arcpy.AddMessage("> amount of places: "+str(Places_n))
 Orig_fm = checkfm(Places, Places_ID)
 Desti_fm = checkfm(Stops, Stops_ID)
 
 #--routing--#
 results = [] ##to fill into HDF5 table
-for mod in Modus:
+for mod in BusTrain:
     if mod[1]==0:continue
     ODLayer(mod, Stops, Stops_ID, Desti_fm[1])
     for place in range(0,Places_n,5000):
-        arcpy.AddMessage("> places from "+str(place)+" to "+str(place+5000))
-        arcpy.AddMessage("> mod: "+mod[0])
+        arcpy.AddMessage("> places from "+str(place)+" to "+str(min(place+5000,Places_n)))
+        arcpy.AddMessage("> type: "+mod[0])
         ODRouting(Places, Places_ID, Orig_fm[0], place, Orig_fm[1])
         results = results + ExportRoutes(mod)
-        arcpy.AddMessage("> time: "+str(round(int(time.time()-start_time)/60,1))+" minutes \n")
+        arcpy.AddMessage("> time: "+str(round(int(time.time()-start_time)/60,1))+" minutes")
     arcpy.Delete_management("stops")
     arcpy.Delete_management("ODLayer")
     arcpy.AddMessage("> "+mod[0]+" finished")
 
 #--HDF5--#
-arcpy.AddMessage("\n> starting with HDF5 \n")
+arcpy.AddMessage("\n> starting with HDF5")
 file5 = HDF5(Database,Potential,results)
 
 #end
-arcpy.AddMessage("> finished")
+arcpy.AddMessage("\n> finished")
 file5.flush()
 file5.close()
