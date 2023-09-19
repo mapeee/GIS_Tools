@@ -50,16 +50,16 @@ def permission(data, tags, manual):
     if data[tags["highway"]] in ["motorway","motorway_link","busway","construction","trunk","trunk_link"]:
         bike = 0
         walk = 0
-    if data[tags["service"]] in ["parking_aisle", "driveway"]:
+    if data[tags["service"]] in ["parking_aisle"]:
         bike = 0
         walk = 0
     #--bike--#
-    if data[tags["bicycle"]] in ["no", "use_sidepath"]:
+    if data[tags["bicycle"]] in ["no"]:
         bike = 0
     if data[tags["bicycle"]] == "yes":
         bike = 1
     #--walk--#
-    if data[tags["foot"]] in ["no", "use_sidepath"]:
+    if data[tags["foot"]] in ["no"]:
         walk = 0
     if data[tags["foot"]] == "yes":
         walk = 1
@@ -76,12 +76,13 @@ def permission(data, tags, manual):
     
     #--use manual values--#
     if manual == True:
+        man = {0:0, 1:1, 8:0}
         if data[tags["Walk_man"]] != 9:
-            walk = data[tags["Walk_man"]]
+            walk = man[data[tags["Walk_man"]]]
         if data[tags["Bike_man"]] != 9:
-            bike = data[tags["Bike_man"]]
+            bike = man[data[tags["Bike_man"]]]
         if data[tags["Car_man"]] != 9:
-            car = data[tags["Car_man"]]
+            car = man[data[tags["Car_man"]]]
 
     data[tags["Bike"]] = bike
     data[tags["Walk"]] = walk
