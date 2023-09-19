@@ -41,9 +41,12 @@ def search_params(Net,mod):
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if mod == "NMT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
-    elif mod == "MT": search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"]]
-    else: search_query = ""
+    try:
+        if mod == "NMT": search_query = [[desc.edgeSources[0].name, "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"],
+                                           [desc.junctionSources[0].name,"Snap = 1"]]
+        else: search_query = [[desc.edgeSources[0].name, "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"],
+                              [desc.junctionSources[0].name,"Snap = 1"]]
+    except: search_query = ""
     
     global travel_mode
     if mod == "NMT": travel_mode = "Walking"

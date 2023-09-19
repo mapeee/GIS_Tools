@@ -139,8 +139,12 @@ def search_params():
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if Mode2 == "NMT": search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
-    else: search_query = [["MRH_Links", "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"]]
+    try:
+        if Mode2 == "NMT": search_query = [[desc.edgeSources[0].name, "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"],
+                                           [desc.junctionSources[0].name,"Snap = 1"]]
+        else: search_query = [[desc.edgeSources[0].name, "bridge = 'F' and tunnel = 'F' and highway not in ('motorway', 'trunk', 'motorway_link', 'trunk_link')"],
+                              [desc.junctionSources[0].name,"Snap = 1"]]
+    except: search_query = ""
 
 ##############
 #--starting--#

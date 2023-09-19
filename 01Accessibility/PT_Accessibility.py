@@ -444,9 +444,8 @@ def search_params():
     for i in desc.junctionSources:search_crit.append([i.name,"NONE"])
     
     global search_query
-    if desc.name == "MRH_Network":
-        search_query = [["MRH_Links", "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"]]
-    else: search_query = ""
+    try: search_query = [[desc.edgeSources[0].name, "(bridge = 'F' and tunnel = 'F') or (tunnel = 'T' and access = 'customers')"],[desc.junctionSources[0].name,"Snap = 1"]]
+    except: search_query = ""
     
     global Costs
     travel_modes = arcpy.na.GetTravelModes(Network)
