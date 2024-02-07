@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 PROJECT_NAME = "CURRENT"
-COL_NAME = ""
+COL_NAME = "LINE_LIN_2"
 TEST_COL = ""
 
 
@@ -23,7 +23,7 @@ uval = np.unique(val)
 
 for i in uval:
     NO = str(i[0])
-    print("> exporting line: "+NO)
+    print("> mapping line: "+NO)
     query = f"LINE_LIN_2 = '{NO}'"
     lyr.definitionQuery = query
     

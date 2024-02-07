@@ -28,9 +28,9 @@ here_key = f[3]
 geocoder_osm = OpenCageGeocode(osm_key)
 
 #--values--#
-Street = 2
-ZIP = 3
-City = 4
+Street = 9
+ZIP = 12
+City = 13
 
 #--open excel--#
 excelfile = f[0]
@@ -92,9 +92,9 @@ for row in range(2,wks.max_row+1):##to prevent 0 and no header
     if row in list(range(0,wks.max_row+1,10)): print(row)
 
 #--header--#
-wks.cell(1, 4).value = 'X'
-wks.cell(1, 5).value = 'Y'
-wks.cell(1, 6).value = 'geocoder'
+wks.cell(1, 16).value = 'X'
+wks.cell(1, 17).value = 'Y'
+wks.cell(1, 18).value = 'geocoder'
 
 #--end--#
 wbk.save(excelfile)
