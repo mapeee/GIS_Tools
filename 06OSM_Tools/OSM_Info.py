@@ -17,8 +17,13 @@ osmID = int(arcpy.GetParameterAsText(0))
 osm_type = arcpy.GetParameterAsText(1)
 
 def overpass_api(osmID, osm_type):
-    query_api = osm_type+"(id:"+str(osmID)+"); (._;>;); out body;"
-    result = overpy.Overpass().query(query_api)
+    if osm_type == "area":
+        result = overpy.Overpass().query("relation(id:"+str(osmID)+"); (._;>;); out body;")
+        if len(result.relations) == 0:
+            result = overpy.Overpass().query("way(id:"+str(osmID)+"); (._;>;); out body;")
+    else:
+        query_api = osm_type+"(id:"+str(osmID)+"); (._;>;); out body;"
+        result = overpy.Overpass().query(query_api)
     return result
 
 def result_print(osmID, osm_type):
@@ -31,5 +36,14 @@ def result_print(osmID, osm_type):
         for tag in result.get_node(osmID).tags:
             value = result.get_node(osmID).tags.get(tag, "n/a")
             arcpy.AddMessage(tag+": "+value)
+    if osm_type == "area":
+        if len(result.relations) == 0:
+            for tag in result.get_way(osmID).tags:
+                value = result.get_way(osmID).tags.get(tag, "n/a")
+                arcpy.AddMessage(tag+": "+value)
+        else:
+            for tag in result.get_relation(osmID).tags:
+                value = result.get_relation(osmID).tags.get(tag, "n/a")
+                arcpy.AddMessage(tag+": "+value)
 
 result_print(osmID, osm_type)
