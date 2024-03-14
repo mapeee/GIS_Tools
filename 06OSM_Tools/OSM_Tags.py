@@ -36,7 +36,8 @@ def add_tags(FC, osmTags):
             ["sidewalk", "sidewalk", "TEXT"],
             ["smoothness","smoothness","TEXT"],
             ["surface","surface","TEXT"],
-            ["step_count","step_count","TEXT"]]
+            ["step_count","step_count","TEXT"],
+            ["building:levels","levels","TEXT"]]
     
     FC_fields = [i.name for i in arcpy.ListFields(FC)]
     FCTags = []
