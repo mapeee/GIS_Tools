@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import arcpy
+import math
 import sys
 
 #--ArcGIS Parameter--#
@@ -54,27 +55,7 @@ def linktime(id_field, data, tags):
             data[tags["tBike_FT"]], data[tags["tBike_TF"]] = data[tags["tBike_FT"]]+0.1, data[tags["tBike_TF"]]+0.1
             data[tags["tWalk_FT"]], data[tags["tWalk_TF"]] = data[tags["tWalk_FT"]]+0.1, data[tags["tWalk_TF"]]+0.1
 
-def nodetime(data, tags):
-    if data[tags["fclass"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 10, 0, 10
-    elif data[tags["fclass"]] == "crossing":
-        if data[tags["crossing"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 4, 5, 4
-        elif data[tags["crossing"]] == "marked": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 3, 2, 3
-        elif data[tags["crossing"]] == "zebra": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 3, 2, 3 
-        else: data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 0, 0, 0 
-    else: data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 0, 0, 0
-
-def osm_dict(id_field):
-    if geo_type == "Polyline":
-        tags = [id_field,"vBike_FT","tBike_FT","vWalk_FT","tWalk_FT","vBike_TF","tBike_TF","vWalk_TF","tWalk_TF","Shape_Length",
-                "vCar","tCar",
-                "highway","bicycle","foot","step_count","cycleway", "sidewalk", "bike_l", "bike_r", "surface", "maxspeed",
-                "walk_l", "walk_r", "town"]
-    if geo_type == "Point":
-        tags = [id_field, "tBike", "tWalk", "tCar", "fclass", "crossing"]
-    tags = dict(zip(tags, [*range(0, len(tags))]))
-    return tags
-    
-def speed(data, tags):
+def linkspeed(data, tags):
     vbike = [17, 17]
     vwalk = [4.8, 4.8]
     
@@ -124,9 +105,36 @@ def speed(data, tags):
     #--car--#
     if vcar > 70: vcar = max(vcar*0.85,70)
     
+    #--slope--#
+    if data[tags["slope"]] != 0 and data[tags["highway"]] != "steps" and vbike[0] > 5 and vbike[1] > 5:
+        slope = data[tags["slope"]] * 100
+        vbike[0], vbike[1] = vbike[0]/17 * ((27.2 / (1 + math.exp(-0.2 * -slope))) + 3.3), vbike[1]/17 * ((27.2 / (1 + math.exp(-0.2 * slope))) + 3.3)
+        vbike[0], vbike[1] = min(vbike[0], 30), min(vbike[1], 30)
+        vbike[0], vbike[1] = max(vbike[0], 4), max(vbike[1], 4)
+        
     data[tags["vBike_FT"]], data[tags["vBike_TF"]] = vbike[0], vbike[1]
     data[tags["vWalk_FT"]], data[tags["vWalk_TF"]] = vwalk[0], vwalk[1]
     data[tags["vCar"]] = vcar
+
+def nodetime(data, tags):
+    if data[tags["fclass"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 10, 0, 10
+    elif data[tags["fclass"]] == "crossing":
+        if data[tags["crossing"]] == "traffic_signals": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 4, 5, 4
+        elif data[tags["crossing"]] == "marked": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 3, 2, 3
+        elif data[tags["crossing"]] == "zebra": data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 3, 2, 3 
+        else: data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 0, 0, 0 
+    else: data[tags["tBike"]], data[tags["tWalk"]], data[tags["tCar"]] = 0, 0, 0
+
+def osm_dict(id_field):
+    if geo_type == "Polyline":
+        tags = [id_field,"vBike_FT","tBike_FT","vWalk_FT","tWalk_FT","vBike_TF","tBike_TF","vWalk_TF","tWalk_TF","Shape_Length",
+                "vCar","tCar",
+                "highway","bicycle","foot","step_count","cycleway", "sidewalk", "bike_l", "bike_r", "surface", "maxspeed",
+                "walk_l", "walk_r", "town", "slope"]
+    if geo_type == "Point":
+        tags = [id_field, "tBike", "tWalk", "tCar", "fclass", "crossing"]
+    tags = dict(zip(tags, [*range(0, len(tags))]))
+    return tags
 
 #--editing--#        
 osm_tags = osm_dict(osm_id_field)    
@@ -134,7 +142,7 @@ field_test(geodata,osm_tags)
 with arcpy.da.UpdateCursor(geodata, list(osm_tags.keys())) as cursor:
     for row in cursor:
         if geo_type == "Polyline":
-            speed(row,osm_tags)
+            linkspeed(row,osm_tags)
             linktime(osm_id_field,row,osm_tags)
         if geo_type == "Point":
             nodetime(row,osm_tags)
