@@ -10,27 +10,27 @@ import numpy as np
 import os
 
 PROJECT_NAME = "CURRENT"
-COL_NAME = "LINE_LIN_2"
-TEST_COL = ""
-
+COL_NAME = "LINENAME"
 
 aprx = arcpy.mp.ArcGISProject(PROJECT_NAME)
 lyt = aprx.listLayouts()[0]
-lyr = aprx.listMaps()[0].listLayers()[0]
+lyr_old = aprx.listMaps()[0].listLayers()[0]
+lyr_new = aprx.listMaps()[0].listLayers()[1]
+lyr_old.definitionQuery = None
+lyr_new.definitionQuery = None
 
-val = arcpy.da.FeatureClassToNumPyArray(lyr,[COL_NAME])
+val = arcpy.da.FeatureClassToNumPyArray(lyr_new,[COL_NAME])
 uval = np.unique(val)
 
 for i in uval:
-    NO = str(i[0])
+    NO = i[0]
     print("> mapping line: "+NO)
-    query = f"LINE_LIN_2 = '{NO}'"
-    lyr.definitionQuery = query
-    
-    if len(np.unique(arcpy.da.FeatureClassToNumPyArray(lyr,[TEST_COL]))) <2: continue
-    
+    query = COL_NAME + f"='{NO}'"
+    lyr_old.definitionQuery = query
+    lyr_new.definitionQuery = query
+
     mf = lyt.listElements('MAPFRAME_ELEMENT')[0]
-    mf.camera.setExtent(mf.getLayerExtent(lyr, False, True))
+    mf.camera.setExtent(mf.getLayerExtent(lyr_new, False, True))
     PATH = glob(os.path.expanduser("~\\*\\Desktop"))[0]
-    try: lyt.exportToJPEG(PATH+"\\Routen\\"+NO+".jpg")
+    try: lyt.exportToJPEG(PATH+"\\Routen_2024\\"+NO+".jpg")
     except: print("> ERROR: "+NO)
