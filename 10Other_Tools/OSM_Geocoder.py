@@ -4,6 +4,7 @@ Created on Mon Sep  2 11:52:57 2024
 """
 import os
 import time
+import numpy as np
 from pathlib import Path
 import geopandas as gpd
 import pandas as pd
@@ -19,10 +20,11 @@ geodata = gpd.read_file(f[0])
 addr = pd.read_excel(f[1])
 
 # --values--#
-STREET = 'NL.ADR-STR-PF'
-HOUSE = 'NL.ADR-HNR'
-ZIP = 'NL.ADR-PLZ'
-CITY = 'NL.ADR-ORT'
+STREET = 'STRASSE'
+HOUSE = 'HNR'
+ZIP = 'PLZ'
+CITY = 'CITY'
+ZIP_Search = False #look for zip area?
 
 # --prepare--#
 addr.sort_values(by=[CITY, ZIP, STREET], inplace=True)
@@ -32,6 +34,17 @@ def geodata_prep(_geodata):
     _geodata["HOUSENO"] = _geodata["HOUSENO"].str.replace(' ', '')
     _geodata["HOUSENO"] = _geodata["HOUSENO"].str.replace(';', '/')
     _geodata["HOUSENO"] = _geodata["HOUSENO"].str.lower()
+    
+    def _HouseNo(data):
+        a = data["HOUSENO"]
+        if a == None:
+            return [None, None]
+        b = data["HOUSENO"].split("-")
+        if len(b) == 2:
+            return [b[0], b[1]]
+        return [b[0], b[0]]
+    
+    _geodata[["HOUSENO2", "HOUSENO3"]] = _geodata.apply(_HouseNo, axis=1, result_type="expand")
     return _geodata
 
 
@@ -45,8 +58,11 @@ def geocoder(_addr_all, _geodata):
         if len(_data_city) == 0:
             yield [0, 0, "error", "city missing"]
             continue
-        if str(_i[1][ZIP]) != _zip:
-            _data_zip = _data_city[_data_city["POSTCODE"] == str(_i[1][ZIP])]
+        if ZIP_Search == True:
+            if str(_i[1][ZIP]) != _zip:
+                _data_zip = _data_city[_data_city["POSTCODE"] == str(_i[1][ZIP])]
+        else:
+            _data_zip = _data_city
         if _i[1][STREET] != _street0 or str(_i[1][ZIP]) != _zip:
             _zip = str(_i[1][ZIP])
             _street0 = _i[1][STREET]
@@ -77,7 +93,9 @@ def geocode_house(_addr, _geodata_street):
         _house = ""
     if len(_house) > 9:
         return [0, 0, "error", "house format error"]
-    if _house not in _geodata_street["HOUSENO"].unique():
+    if _house not in pd.unique(np.concatenate([_geodata_street['HOUSENO'].unique(), 
+                        _geodata_street['HOUSENO2'].unique(),
+                        _geodata_street['HOUSENO3'].unique()])):
         if any(x in _house for x in ["-", " - ", "+", "/"]):
             for delimiter in ["-", " - ", "/", "+"]:  # split '- /'
                 _house = " ".join(_house.split(delimiter))
@@ -95,6 +113,12 @@ def geocode_house(_addr, _geodata_street):
                     break
                 if n == 10:
                     return [0, 0, "error", "house missing"]
+        _note = _house
+    if _note == "" and _house not in _geodata_street["HOUSENO"].unique():
+        if _house in _geodata_street["HOUSENO2"].unique():
+            _house = _geodata_street[_geodata_street["HOUSENO2"] == str(_house)].iloc[0]["HOUSENO"]
+        else:
+            _house = _geodata_street[_geodata_street["HOUSENO3"] == str(_house)].iloc[0]["HOUSENO"]
         _note = _house
     _data_house = _geodata_street[_geodata_street["HOUSENO"] == str(_house)]
     if str(_addr[1][ZIP]) not in _data_house["POSTCODE"].unique():
