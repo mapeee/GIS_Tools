@@ -23,6 +23,8 @@ val = arcpy.da.FeatureClassToNumPyArray(lyr_new,[COL_NAME])
 uval = np.unique(val)
 
 for i in uval:
+    lyr_old.updateDefinitionQueries([]) #clear all Queries
+    lyr_new.updateDefinitionQueries([]) #clear all Queries
     NO = i[0]
     print("> mapping line: "+NO)
     query = COL_NAME + f"='{NO}'"
