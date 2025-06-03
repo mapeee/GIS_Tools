@@ -68,7 +68,7 @@ def ExportRoutes(mod):
             for i,e in enumerate(fields[1:]): #without NAME field
                 l = l+(route[i+1],)
             array.append(l)
-    del route,routes
+    del routes
     arcpy.Delete_management("places")
     arcpy.AddMessage("> routes: "+str(len(array)))
     return array
