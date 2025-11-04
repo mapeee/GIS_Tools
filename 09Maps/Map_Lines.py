@@ -34,5 +34,5 @@ for i in uval:
     mf = lyt.listElements('MAPFRAME_ELEMENT')[0]
     mf.camera.setExtent(mf.getLayerExtent(lyr_new, False, True))
     PATH = glob(os.path.expanduser("~\\*\\Desktop"))[0]
-    try: lyt.exportToJPEG(PATH+"\\Routen_2024\\"+NO+".jpg")
+    try: lyt.exportToJPEG(PATH+"\\Routen_2025\\"+NO+".jpg")
     except: print("> ERROR: "+NO)
